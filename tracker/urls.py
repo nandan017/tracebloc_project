@@ -7,4 +7,6 @@ urlpatterns = [
     path('product/<uuid:product_id>/', views.product_detail, name='product_detail'),
      # New URL for adding a step
     path('product/<uuid:product_id>/add_step/', views.add_supply_chain_step, name='add_supply_chain_step'),
+    # New URL for the public tracking page
+    path('track/<uuid:product_id>/', views.public_tracking_view, name='public_tracking_page'),
 ]

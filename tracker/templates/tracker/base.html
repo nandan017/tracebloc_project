@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TraceBloc{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'base': {
+                100: '#2A2A2A', // Dark grey for cards/elements
+                900: '#1a1a1a', // Rich black for backgrounds
+              },
+              'accent': {
+                DEFAULT: '#FF4500', // A vibrant orange-red
+                hover: '#E63E00',   // A slightly darker orange for hover effects
+              },
+              'text': {
+                DEFAULT: '#E5E7EB', // A light grey for primary text
+                muted: '#9CA3AF',   // A muted grey for secondary text
+              },
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+        .htmx-indicator-form.htmx-request .btn-text {
+            display: none;
+        }
+        .htmx-indicator-form:not(.htmx-request) .btn-loader {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-base-900 text-text flex flex-col min-h-screen">
+
+    <header class="bg-base-100 shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <a href="{% url 'product_list' %}" class="text-white font-bold text-xl hover:text-accent">
+                    TraceBloc
+                </a>
+            </div>
+            <div>
+                <a href="{% url 'product_list' %}" class="text-text-muted hover:text-accent">
+                    All Products
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-6 md:p-8 flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-base-100 mt-8">
+        <div class="container mx-auto px-6 py-4 text-center text-text-muted">
+            <p>&copy; 2025 TraceBloc. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+</body>
+</html>

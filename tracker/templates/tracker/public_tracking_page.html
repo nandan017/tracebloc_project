@@ -1,0 +1,34 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Tracking for {{ product.name }}{% endblock %}
+
+{% block content %}
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-white">{{ product.name }}</h1>
+        <p class="text-accent font-mono mt-2">{{ product.sku }}</p>
+        <p class="mt-4 max-w-2xl mx-auto text-text-muted">{{ product.description }}</p>
+    </div>
+
+    <div class="relative max-w-2xl mx-auto">
+        <div class="absolute left-4 top-2 h-full border-l-2 border-base-100"></div>
+
+        {% for step in product.steps.all %}
+            <div class="relative pl-12 pb-8">
+                <div class="absolute left-0 top-2 w-8 h-8 bg-base-100 rounded-full flex items-center justify-center">
+                    <div class="w-4 h-4 bg-accent rounded-full"></div>
+                </div>
+
+                <div class="bg-base-100 p-4 rounded-lg shadow-md">
+                    <p class="font-bold text-white text-lg">{{ step.get_stage_display }}</p>
+                    <p class="text-text-muted">{{ step.location }}</p>
+                    <p class="text-sm text-text-muted mt-2">{{ step.timestamp|date:"F j, Y, g:i a" }}</p>
+                    {% if step.tx_hash %}
+                        <a href="https://www.oklink.com/amoy/tx/{{ step.tx_hash }}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-accent hover:underline mt-2 inline-block truncate w-full">
+                            Tx: {{ step.tx_hash }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}
