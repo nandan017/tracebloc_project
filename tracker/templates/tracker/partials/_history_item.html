@@ -1,0 +1,11 @@
+<div class="bg-brand-grey-dark p-4 rounded-lg flex items-start gap-4">
+    <div class="w-4 h-4 rounded-full bg-brand-orange mt-1"></div>
+    <div>
+        <p class="font-bold text-white">{{ step.get_stage_display }}</p>
+        <p class="text-brand-grey-light">{{ step.location }}</p>
+        <small class="text-brand-grey">{{ step.timestamp|date:"F j, Y, g:i a" }}</small>
+        {% if step.tx_hash %}
+            <p class="font-mono text-xs text-brand-orange mt-1">Tx: {{ step.tx_hash }}</p>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,10 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.product_list, name='product_list'),
+    # The <uuid:product_id> part captures the ID from the URL and passes it to the view
+    path('product/<uuid:product_id>/', views.product_detail, name='product_detail'),
+     # New URL for adding a step
+    path('product/<uuid:product_id>/add_step/', views.add_supply_chain_step, name='add_supply_chain_step'),
+]

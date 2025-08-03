@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} - TraceBloc</title>
+    {% load tailwind_tags %}
+    {% tailwind_css %}
+</head>
+<body class="bg-brand-black text-brand-grey font-sans">
+
+<main class="container mx-auto p-8">
+    <a href="{% url 'product_list' %}" class="text-brand-orange hover:text-white mb-8 block">&larr; Back to All Products</a>
+
+    <div class="border-b border-brand-grey-dark pb-4 mb-8">
+        <h1 class="text-4xl font-bold text-white">{{ product.name }}</h1>
+        <p class="text-brand-orange font-mono mt-1">{{ product.sku }}</p>
+    </div>
+
+    <div class="bg-brand-grey-dark p-6 rounded-lg shadow-lg">
+        <h2 class="text-2xl font-semibold text-white mb-4">Product Information</h2>
+        <p class="text-lg text-brand-grey-light">{{ product.description }}</p>
+        <p class="text-sm mt-4">Tracked Since: {{ product.created_at|date:"F j, Y, g:i a" }}</p>
+    </div>
+
+    <div class="mt-8">
+    <h2 class="text-2xl font-semibold text-white mb-4">Tracking History</h2>
+
+    <div class="space-y-4">
+        {% for step in product.steps.all %}
+            {% include 'tracker/partials/_history_item.html' %}
+        {% empty %}
+            <p class="text-brand-grey-light">No tracking updates have been added for this product yet.</p>
+        {% endfor %}
+    </div>
+
+    
+</div>
+<div class="mt-8">
+    <h3 class="text-lg font-semibold text-white mb-3">Add New Update</h3>
+    <form hx-post="{% url 'add_supply_chain_step' product_id=product.id %}" 
+          hx-target="#history-log" 
+          hx-swap="beforeend"
+          hx-on="htmx:afterRequest: this.reset()">
+        {% csrf_token %}
+        <div class="bg-brand-grey-dark p-6 rounded-lg flex flex-col gap-4">
+            {{ form.as_p }} <button type="submit" class="bg-brand-orange text-brand-black font-bold py-3 px-6 rounded hover:bg-opacity-80 transition-colors w-full md:w-auto">
+                Add Update
+            </button>
+        </div>
+    </form>
+</div>
+
+<div id="history-log" class="space-y-4 mt-4">
+   </div>
+
+</main>
+
+</body>
+</html>
