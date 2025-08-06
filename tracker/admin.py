@@ -9,6 +9,7 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = ('name', 'sku', 'created_at')
     search_fields = ('name', 'sku')
     readonly_fields = ('id', 'created_at')
+    filter_horizontal = ('authorized_users',)
 
 @admin.register(SupplyChainStep)
 class SupplyChainStepAdmin(admin.ModelAdmin):

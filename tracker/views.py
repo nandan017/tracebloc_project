@@ -3,11 +3,17 @@ import os
 import json
 from dotenv import load_dotenv
 from web3 import Web3
+from web3.middleware import ExtraDataToPOAMiddleware
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_POST
-from .models import Product
+from django.contrib.auth.decorators import login_required
+from .models import Product, SupplyChainStep
 from .forms import SupplyChainStepForm
+import qrcode
+from io import BytesIO
+from django.http import HttpResponse
+from django.urls import reverse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,14 +23,13 @@ RPC_URL = os.getenv("POLYGON_AMOY_RPC_URL")
 PRIVATE_KEY = os.getenv("SIGNER_PRIVATE_KEY")
 CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
 
-# Check if required environment variables are set
 if not all([RPC_URL, PRIVATE_KEY, CONTRACT_ADDRESS]):
     raise Exception("Please ensure POLYGON_AMOY_RPC_URL, SIGNER_PRIVATE_KEY, and CONTRACT_ADDRESS are set in your .env file")
 
 w3 = Web3(Web3.HTTPProvider(RPC_URL))
+w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 account = w3.eth.account.from_key(PRIVATE_KEY)
 
-# Load contract ABI from the JSON file
 abi_path = os.path.join(settings.BASE_DIR, 'tracker/contract_abi.json')
 try:
     with open(abi_path, 'r') as f:
@@ -32,14 +37,12 @@ try:
 except FileNotFoundError:
     raise Exception(f"contract_abi.json not found at {abi_path}. Please create it.")
 
-# --- THIS IS THE CORRECTED PART ---
-# Convert the address to a checksum address before creating the contract object
 checksum_address = w3.to_checksum_address(CONTRACT_ADDRESS)
 contract = w3.eth.contract(address=checksum_address, abi=contract_abi)
-# --- End of Correction ---
+# --- End of Blockchain Setup ---
+
 
 def product_list(request):
-    """A view to display a list of all products."""
     products = Product.objects.all().order_by('-created_at')
     context = {
         'products': products
@@ -48,9 +51,21 @@ def product_list(request):
 
 
 def product_detail(request, product_id):
-    """A view to display the details of a single product."""
     product = get_object_or_404(Product, id=product_id)
-    form = SupplyChainStepForm()
+
+    # --- New Logic to Filter Choices by Role ---
+    available_stages = []
+    if request.user.is_authenticated and request.user in product.authorized_users.all():
+        if request.user.groups.filter(name='Supplier').exists():
+            available_stages.extend(['sourcing', 'packing'])
+        if request.user.groups.filter(name='Distributor').exists():
+            available_stages.extend(['shipping', 'delivery'])
+        if request.user.groups.filter(name='Retailer').exists():
+            available_stages.append('retail')
+
+    # Create a form instance with only the allowed choices
+    allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
+    form = SupplyChainStepForm(allowed_choices=allowed_choices)
     context = {
         'product': product,
         'form': form,
@@ -58,18 +73,46 @@ def product_detail(request, product_id):
     return render(request, 'tracker/product_detail.html', context)
 
 
-@require_POST # This view only accepts POST requests
+@login_required
+@require_POST
 def add_supply_chain_step(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+     # New permission check
+    if request.user not in product.authorized_users.all():
+        # Return an error if the user is not authorized for this product
+        error_message = "You do not have permission to add an update to this product."
+        response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
+        response['HX-Retarget'] = '#error-container'
+        return response
+    
+     # --- New Granular Role-Based Permission Check ---
+    stage = request.POST.get('stage')
+    user_groups = [group.name for group in request.user.groups.all()]
+
+    permission_denied = False
+    if stage == 'sourcing' and 'Supplier' not in user_groups:
+        permission_denied = True
+    if stage in ['shipping', 'delivery'] and 'Distributor' not in user_groups:
+        permission_denied = True
+    if stage == 'retail' and 'Retailer' not in user_groups:
+        permission_denied = True
+    # (You can add more rules here)
+
+    if permission_denied:
+        error_message = f"Your role does not have permission to add a '{stage}' update."
+        response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
+        response['HX-Retarget'] = '#error-container'
+        return response
+    # --- End of New Check ---
+
     form = SupplyChainStepForm(request.POST)
 
     if form.is_valid():
         new_step = form.save(commit=False)
         new_step.product = product
 
-        # --- Call the Smart Contract ---
         try:
-            # Build Transaction
             tx = contract.functions.addUpdate(
                 str(product.id),
                 new_step.get_stage_display(),
@@ -78,39 +121,54 @@ def add_supply_chain_step(request, product_id):
                 'from': account.address,
                 'nonce': w3.eth.get_transaction_count(account.address),
             })
-            # Sign and send
-            signed_tx = w3.eth.account.sign_transaction(tx, private_key=PRIVATE_KEY)
-            tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-
-            # Wait for receipt and save the hash
+            signed_tx = account.sign_transaction(tx)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             w3.eth.wait_for_transaction_receipt(tx_hash)
             new_step.tx_hash = tx_hash.hex()
-
-            new_step.save() # Save the new step to the database
-
+            new_step.save()
             context = {'step': new_step}
             return render(request, 'tracker/partials/_history_item.html', context)
-
         except Exception as e:
-            # --- THIS IS THE NEW ERROR HANDLING LOGIC ---
             print(f"An error occurred during the blockchain transaction: {e}")
-
-            # Create a response containing the error message
             error_message = "Transaction failed. Please check your connection and try again."
             response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
-
-            # Use a special HTMX header to retarget this response to the error container
             response['HX-Retarget'] = '#error-container'
             return response
-
-    # This part handles an invalid form
-    return render(request, 'tracker/product_detail.html', {'product': product, 'form': form})
+        
+    # We must also re-calculate the allowed_choices for the form to render correctly
+    available_stages = []
+    if request.user.groups.filter(name='Supplier').exists():
+        available_stages.extend(['sourcing', 'packing'])
+    if request.user.groups.filter(name='Distributor').exists():
+        available_stages.extend(['shipping', 'delivery'])
+    if request.user.groups.filter(name='Retailer').exists():
+        available_stages.append('retail')
+    allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
+    form.fields['stage'].choices = allowed_choices
+            
+    return render(request, 'tracker/partials/_add_update_form.html', {'product': product, 'form': form})
 
 
 def public_tracking_view(request, product_id):
-    """A public, read-only view to display the full history of a product."""
     product = get_object_or_404(Product, id=product_id)
     context = {
         'product': product
     }
     return render(request, 'tracker/public_tracking_page.html', context)
+
+def product_qr_code_view(request, product_id):
+    """Generates and serves a QR code image for a product's public tracking page."""
+    # Construct the full, absolute URL for the public tracking page
+    public_url = request.build_absolute_uri(
+        reverse('public_tracking_page', args=[str(product_id)])
+    )
+
+    # Generate the QR code in memory
+    qr_image = qrcode.make(public_url, box_size=10, border=4)
+
+    # Create an in-memory buffer to save the image
+    buffer = BytesIO()
+    qr_image.save(buffer, format='PNG')
+
+    # Return the buffer's content as an HTTP response with the correct content type
+    return HttpResponse(buffer.getvalue(), content_type="image/png")

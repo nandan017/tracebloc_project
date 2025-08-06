@@ -19,6 +19,17 @@
         <p class="text-sm mt-4">Tracked Since: {{ product.created_at|date:"F j, Y, g:i a" }}</p>
     </div>
 
+    <div class="mt-8 bg-base-100 p-6 rounded-lg shadow-lg text-center">
+        <h2 class="text-2xl font-semibold text-white mb-4">Product QR Code</h2>
+        <div class="flex justify-center">
+            <img src="{% url 'product_qr_code' product_id=product.id %}" alt="QR Code for {{ product.name }}" class="bg-white p-2 rounded-lg">
+        </div>
+        <p class="text-text-muted mt-4 text-sm">Scan this code to view the public tracking page.</p>
+        <a href="{% url 'product_qr_code' product_id=product.id %}" download="{{ product.sku }}_qrcode.png" class="inline-block mt-2 text-accent text-sm font-semibold hover:underline">
+            Download QR Code
+        </a>
+    </div>
+
     <div class="mt-8">
         <h2 class="text-2xl font-semibold text-white mb-4">Tracking History</h2>
         <div id="history-log" class="space-y-4">
@@ -31,39 +42,9 @@
     </div>
 
     <div id="error-container"></div>
-
-    <div class="mt-8">
-    <h3 class="text-lg font-semibold text-white mb-3">Add New Update</h3>
-    
-    <form hx-post="{% url 'add_supply_chain_step' product_id=product.id %}" 
-          hx-target="#history-log" 
-          hx-swap="beforeend"
-          hx-on="htmx:afterRequest: this.reset()"
-          class="htmx-indicator-form">
-        {% csrf_token %}
-        <div class="bg-brand-grey-dark p-6 rounded-lg space-y-4">
-            
-            <div>
-                <label for="{{ form.stage.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Stage</label>
-                <select name="{{ form.stage.name }}" id="{{ form.stage.id_for_label }}" class="bg-brand-black border border-brand-grey-dark text-white text-sm rounded-lg focus:ring-brand-orange focus:border-brand-orange block w-full p-2.5">
-                    {% for value, text in form.stage.field.choices %}
-                        <option value="{{ value }}">{{ text }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div>
-                <label for="{{ form.location.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Location</label>
-                <input type="text" name="{{ form.location.name }}" id="{{ form.location.id_for_label }}" placeholder="e.g., Central Warehouse" class="bg-brand-black border border-brand-grey-dark text-white text-sm rounded-lg focus:ring-brand-orange focus:border-brand-orange block w-full p-2.5">
-            </div>
-
-            <button type="submit" class="w-full text-brand-black bg-brand-orange hover:bg-opacity-90 focus:ring-4 focus:outline-none focus:ring-orange-300 font-bold rounded-lg text-sm px-5 py-3 text-center disabled:opacity-50">
-                <span class="btn-text">Add Update</span>
-                <span class="btn-loader htmx-indicator">Adding to Blockchain...</span>
-            </button>
-        </div>
-    </form>
-</div>
+    {% if user.is_authenticated and user in product.authorized_users.all %}
+        {% include 'tracker/partials/_add_update_form.html' %}
+    {% endif %}
 
 <style>
     .htmx-indicator-form.htmx-request .btn-text {

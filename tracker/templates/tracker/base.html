@@ -48,11 +48,22 @@
                     TraceBloc
                 </a>
             </div>
-            <div>
+            <div class="flex items-center space-x-4">
                 <a href="{% url 'product_list' %}" class="text-text-muted hover:text-accent">
                     All Products
                 </a>
-            </div>
+                {% if user.is_authenticated %}
+                    <span class="text-white">Hi, {{ user.username }}</span>
+                    <form action="{% url 'logout' %}" method="post" class="inline">
+    {% csrf_token %}
+    <button type="submit" class="bg-transparent border-none p-0 text-text-muted hover:text-accent">
+        Logout
+    </button>
+</form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-text-muted hover:text-accent">Login</a>
+                {% endif %}
+              </div>
         </nav>
     </header>
 
