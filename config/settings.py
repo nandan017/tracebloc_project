@@ -90,10 +90,7 @@ INTERNAL_IPS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://your_local_user:your_local_password@localhost/tracebloc_db',
-        conn_max_age=600
-    )
+    
 }
 
 
@@ -148,3 +145,35 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+
+# --- Production/Development Logic ---
+# This logic explicitly checks if we are in the Render production environment
+if os.getenv('RENDER', 'False') == 'True':
+    # Production settings on Render
+    DEBUG = False
+    
+    # Add your Render URL to the allowed hosts
+    ALLOWED_HOSTS = [os.getenv('RENDER_EXTERNAL_HOSTNAME')]
+
+    DATABASES = {
+        'default': dj_database_url.config(
+        default='postgres://your_local_user:your_local_password@localhost/tracebloc_db',
+        conn_max_age=600,
+        ssl_require=True
+    )
+    }
+else:
+    # Local development settings
+    DEBUG = True
+    ALLOWED_HOSTS = []
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'tracebloc_db',
+            'USER': 'tracebloc_user',      # Replace with your local username
+            'PASSWORD': 'qwerty7951',  # Replace with your local password
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
