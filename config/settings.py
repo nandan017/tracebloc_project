@@ -90,14 +90,10 @@ INTERNAL_IPS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tracebloc_db',
-        'USER': 'tracebloc_user',  # Your PostgreSQL username
-        'PASSWORD': 'qwerty7951',   # Your PostgreSQL password
-        'HOST': 'localhost',             # Or '127.0.0.1'
-        'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default='postgres://your_local_user:your_local_password@localhost/tracebloc_db',
+        conn_max_age=600
+    )
 }
 
 
