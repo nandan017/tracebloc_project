@@ -1,0 +1,22 @@
+# Gitignore file
+
+# Environments
+venv/
+venv_old/
+
+# Secret files
+.env
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+staticfiles/
+media/
+
+# Python
+*.py[cod]
+*$py.class
