@@ -154,7 +154,7 @@ if os.getenv('RENDER', 'False') == 'True':
     DEBUG = False
     
     # Add your Render URL to the allowed hosts
-    ALLOWED_HOSTS = [os.getenv('RENDER_HOST')]
+    ALLOWED_HOSTS = [os.getenv('RENDER_EXTERNAL_HOSTNAME', 'tracebloc.onrender.com')]
 
     DATABASES = {
         'default': dj_database_url.config(
