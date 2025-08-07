@@ -85,15 +85,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-DATABASES = {
-    
-}
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
@@ -156,6 +147,8 @@ if os.getenv('RENDER', 'False') == 'True':
     # Add your Render URL to the allowed hosts
     ALLOWED_HOSTS = [os.getenv('RENDER_EXTERNAL_HOSTNAME', 'tracebloc.onrender.com')]
 
+    # Database
+    # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
     DATABASES = {
         'default': dj_database_url.config(
         default='postgres://your_local_user:your_local_password@localhost/tracebloc_db',
@@ -177,3 +170,12 @@ else:
             'PORT': '5432',
         }
     }
+
+# --- Role and Permission Management ---
+ROLE_PERMISSIONS = {
+    'Supplier': ['sourcing', 'packing'],
+    'Manufacturer': ['manufacturing'],
+    'Distributor': ['shipping', 'delivery'],
+    'Retailer': ['retail'],
+    'Customer': [],
+}

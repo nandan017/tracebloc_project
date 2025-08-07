@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Group
 from .models import Product, SupplyChainStep
+from django.conf import settings
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -21,9 +22,6 @@ class SupplyChainStepForm(forms.ModelForm):
             self.fields['stage'].choices = allowed_choices
 
 class CustomUserCreationForm(UserCreationForm):
-    ROLE_CHOICES = (
-        ('Supplier', 'Supplier'),
-        ('Distributor', 'Distributor'),
-        ('Retailer', 'Retailer'),
-    )
+    # Dynamically create choices from settings
+    ROLE_CHOICES = [(role, role) for role in settings.ROLE_PERMISSIONS.keys()]
     role = forms.ChoiceField(choices=ROLE_CHOICES)

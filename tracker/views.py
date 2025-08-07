@@ -14,6 +14,7 @@ import qrcode
 from io import BytesIO
 from django.http import HttpResponse
 from django.urls import reverse
+from django.conf import settings
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,12 +57,12 @@ def product_detail(request, product_id):
     # --- New Logic to Filter Choices by Role ---
     available_stages = []
     if request.user.is_authenticated and request.user in product.authorized_users.all():
-        if request.user.groups.filter(name='Supplier').exists():
-            available_stages.extend(['sourcing', 'packing'])
-        if request.user.groups.filter(name='Distributor').exists():
-            available_stages.extend(['shipping', 'delivery'])
-        if request.user.groups.filter(name='Retailer').exists():
-            available_stages.append('retail')
+        user_groups = request.user.groups.values_list('name', flat=True)
+        for group in user_groups:
+            available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
+    
+    # Remove duplicates and maintain order
+    available_stages = sorted(list(set(available_stages)))
 
     # Create a form instance with only the allowed choices
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
@@ -88,20 +89,16 @@ def add_supply_chain_step(request, product_id):
     
      # --- New Granular Role-Based Permission Check ---
     stage = request.POST.get('stage')
-    user_groups = [group.name for group in request.user.groups.all()]
+    user_groups = request.user.groups.values_list('name', flat=True)
 
-    permission_denied = False
-    if stage == 'sourcing' and 'Supplier' not in user_groups:
-        permission_denied = True
-    if stage == 'manufacturing' and 'Manufacturer' not in user_groups: 
-        permission_denied = True
-    if stage in ['shipping', 'delivery'] and 'Distributor' not in user_groups:
-        permission_denied = True
-    if stage == 'retail' and 'Retailer' not in user_groups:
-        permission_denied = True
-    # (You can add more rules here)
+    # Check if the submitted stage is allowed for any of the user's roles
+    is_authorized_for_stage = False
+    for group in user_groups:
+        if stage in settings.ROLE_PERMISSIONS.get(group, []):
+            is_authorized_for_stage = True
+            break
 
-    if permission_denied:
+    if not is_authorized_for_stage:
         error_message = f"Your role does not have permission to add a '{stage}' update."
         response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
         response['HX-Retarget'] = '#error-container'
