@@ -142,7 +142,7 @@ LOGOUT_REDIRECT_URL = '/'
 # This logic explicitly checks if we are in the Render production environment
 if os.getenv('RENDER', 'False') == 'True':
     # Production settings on Render
-    DEBUG = False
+    DEBUG = (os.getenv('DEBUG', 'False') == 'True')
     
     # Add your Render URL to the allowed hosts
     ALLOWED_HOSTS = [os.getenv('RENDER_EXTERNAL_HOSTNAME', 'tracebloc.onrender.com')]
