@@ -22,6 +22,11 @@ class SupplyChainStepForm(forms.ModelForm):
             self.fields['stage'].choices = allowed_choices
 
 class CustomUserCreationForm(UserCreationForm):
-    # Dynamically create choices from settings
-    ROLE_CHOICES = [(role, role) for role in settings.ROLE_PERMISSIONS.keys()]
-    role = forms.ChoiceField(choices=ROLE_CHOICES)
+    # Define the field without choices initially
+    role = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the choices dynamically here, inside the __init__ method
+        role_choices = [(role, role) for role in settings.ROLE_PERMISSIONS.keys()]
+        self.fields['role'].choices = role_choices
