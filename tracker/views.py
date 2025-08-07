@@ -93,6 +93,8 @@ def add_supply_chain_step(request, product_id):
     permission_denied = False
     if stage == 'sourcing' and 'Supplier' not in user_groups:
         permission_denied = True
+    if stage == 'manufacturing' and 'Manufacturer' not in user_groups: 
+        permission_denied = True
     if stage in ['shipping', 'delivery'] and 'Distributor' not in user_groups:
         permission_denied = True
     if stage == 'retail' and 'Retailer' not in user_groups:
@@ -139,6 +141,8 @@ def add_supply_chain_step(request, product_id):
     available_stages = []
     if request.user.groups.filter(name='Supplier').exists():
         available_stages.extend(['sourcing', 'packing'])
+    if request.user.groups.filter(name='Manufacturer').exists(): 
+        available_stages.append('manufacturing')
     if request.user.groups.filter(name='Distributor').exists():
         available_stages.extend(['shipping', 'delivery'])
     if request.user.groups.filter(name='Retailer').exists():
