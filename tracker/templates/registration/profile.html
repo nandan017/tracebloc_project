@@ -1,0 +1,21 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+    <div class="max-w-md mx-auto mt-10">
+        <div class="bg-base-100 p-8 rounded-lg shadow-lg">
+            <h2 class="text-3xl font-bold text-white text-center mb-2">{{ user.username }}</h2>
+            <p class="text-center text-text-muted mb-6">{{ user.email }}</p>
+
+            <h3 class="text-lg font-semibold text-white mb-3">Your Roles:</h3>
+            <ul class="space-y-2">
+                {% for group in user.groups.all %}
+                    <li class="bg-base-900 p-3 rounded-md text-text">{{ group.name }}</li>
+                {% empty %}
+                    <li class="text-text-muted">You have not been assigned any roles.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

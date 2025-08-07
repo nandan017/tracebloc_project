@@ -178,6 +178,11 @@ def product_qr_code_view(request, product_id):
 
 @login_required
 def create_product(request):
+
+    # New permission check: Deny access if user is in the 'Customer' group
+    if request.user.groups.filter(name='Customer').exists():
+        return redirect('product_list') # Or show a permission denied page
+
     if request.method == 'POST':
         form = ProductForm(request.POST)
         if form.is_valid():
@@ -208,3 +213,19 @@ def register_view(request):
         form = CustomUserCreationForm()
 
     return render(request, 'registration/register.html', {'form': form})
+
+@login_required
+def delete_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    # Check if the user is authorized for this product
+    if request.user in product.authorized_users.all():
+        if request.method == 'POST':
+            product.delete()
+            return redirect('product_list')
+    
+    # If not authorized or not a POST request, redirect
+    return redirect('product_detail', product_id=product.id)
+
+@login_required
+def profile_view(request):
+    return render(request, 'registration/profile.html')
