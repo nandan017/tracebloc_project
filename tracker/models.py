@@ -19,6 +19,7 @@ class Product(models.Model):
 class SupplyChainStep(models.Model):
     STAGE_CHOICES = [
         ('sourcing', 'Sourcing'),
+        ('manufacturing', 'Manufacturing'),
         ('processing', 'Processing'),
         ('packing', 'Packing'),
         ('shipping', 'Shipping'),

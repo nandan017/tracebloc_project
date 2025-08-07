@@ -11,4 +11,6 @@ urlpatterns = [
     path('track/<uuid:product_id>/', views.public_tracking_view, name='public_tracking_page'),
     # New URL for generating the QR code image
     path('product/<uuid:product_id>/qr_code/', views.product_qr_code_view, name='product_qr_code'),
+    # New URL for product creation
+    path('product/create/', views.create_product, name='create_product'),
 ]

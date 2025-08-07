@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from web3 import Web3
 from web3.middleware import ExtraDataToPOAMiddleware
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .models import Product, SupplyChainStep
-from .forms import SupplyChainStepForm
+from .forms import SupplyChainStepForm, ProductForm, CustomUserCreationForm
 import qrcode
 from io import BytesIO
 from django.http import HttpResponse
@@ -172,3 +172,36 @@ def product_qr_code_view(request, product_id):
 
     # Return the buffer's content as an HTTP response with the correct content type
     return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+@login_required
+def create_product(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.save()
+            # Automatically authorize the creator for this product
+            product.authorized_users.add(request.user)
+            return redirect('product_detail', product_id=product.id)
+    else:
+        form = ProductForm()
+
+    return render(request, 'tracker/create_product.html', {'form': form})
+
+def register_view(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Get the role from the form
+            role_name = form.cleaned_data.get('role')
+            # Find the group with that name and add the user to it
+            role_group = Group.objects.get(name=role_name)
+            user.groups.add(role_group)
+            # Log the user in automatically
+            login(request, user)
+            return redirect('product_list')
+    else:
+        form = CustomUserCreationForm()
+
+    return render(request, 'registration/register.html', {'form': form})
