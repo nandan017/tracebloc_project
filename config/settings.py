@@ -173,9 +173,9 @@ else:
 
 # --- Role and Permission Management ---
 ROLE_PERMISSIONS = {
-    'Supplier': ['sourcing', 'packing'],
-    'Manufacturer': ['manufacturing'],
+    'Supplier': ['sourcing'],
+    'Manufacturer': ['manufacturing', 'packing'],
     'Distributor': ['shipping', 'delivery'],
-    'Retailer': ['retail'],
+    'Retailer': ['shipping', 'delivery','retail'],
     'Customer': [],
 }
