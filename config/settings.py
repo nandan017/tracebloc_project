@@ -154,7 +154,7 @@ if os.getenv('RENDER', 'False') == 'True':
     DEBUG = False
     
     # Add your Render URL to the allowed hosts
-    ALLOWED_HOSTS = [os.getenv('DATABASE_URL')]
+    ALLOWED_HOSTS = [os.getenv('RENDER_HOST')]
 
     DATABASES = {
         'default': dj_database_url.config(
