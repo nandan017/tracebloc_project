@@ -224,14 +224,17 @@ def register_view(request):
 @login_required
 def delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    # Check if the user is authorized for this product
-    if request.user in product.authorized_users.all():
+
+    # Check for high-level permission to delete
+    is_manager = request.user.groups.filter(name='Manager').exists()
+    if request.user.is_superuser or is_manager:
         if request.method == 'POST':
             product.delete()
             return redirect('product_list')
-    
-    # If not authorized or not a POST request, redirect
+
+    # If not a manager/superuser or not a POST request, redirect
     return redirect('product_detail', product_id=product.id)
+
 
 @login_required
 def profile_view(request):
