@@ -235,4 +235,15 @@ def delete_product(request, product_id):
 
 @login_required
 def profile_view(request):
-    return render(request, 'registration/profile.html')
+    # Get the current user
+    user = request.user
+    # Get all groups the user belongs to
+    user_groups = user.groups.all()
+    # Get all products this user is authorized to manage
+    associated_products = Product.objects.filter(authorized_users=user).order_by('name')
+
+    context = {
+        'user_groups': user_groups,
+        'associated_products': associated_products,
+    }
+    return render(request, 'registration/profile.html', context)
