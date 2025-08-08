@@ -47,8 +47,15 @@ contract = w3.eth.contract(address=checksum_address, abi=contract_abi)
 
 def product_list(request):
     products = Product.objects.all().order_by('-created_at')
+
+    # Check if the logged-in user is in the 'Customer' group
+    is_customer = False
+    if request.user.is_authenticated:
+        is_customer = request.user.groups.filter(name='Customer').exists()
+
     context = {
-        'products': products
+        'products': products,
+        'is_customer': is_customer, # Pass the flag to the template
     }
     return render(request, 'tracker/product_list.html', context)
 
@@ -145,7 +152,7 @@ def add_supply_chain_step(request, product_id):
     if request.user.groups.filter(name='Distributor').exists():
         available_stages.extend(['shipping', 'delivery'])
     if request.user.groups.filter(name='Retailer').exists():
-        available_stages.append('retail')
+        available_stages.append('shipping', 'delivery','retail') 
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form.fields['stage'].choices = allowed_choices
             
