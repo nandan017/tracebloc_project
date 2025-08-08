@@ -63,22 +63,28 @@ def product_list(request):
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
-    # --- New Logic to Filter Choices by Role ---
     available_stages = []
+    is_manager = False # Default to False
+
     if request.user.is_authenticated and request.user in product.authorized_users.all():
         user_groups = request.user.groups.values_list('name', flat=True)
+
+        # Check if user is a manager
+        if 'Manager' in user_groups:
+            is_manager = True
+
+        # Determine available stages based on roles
         for group in user_groups:
             available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
-    
-    # Remove duplicates and maintain order
-    available_stages = sorted(list(set(available_stages)))
 
-    # Create a form instance with only the allowed choices
+    available_stages = sorted(list(set(available_stages)))
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(allowed_choices=allowed_choices)
+
     context = {
         'product': product,
         'form': form,
+        'is_manager': is_manager, # Pass the manager flag to the template
     }
     return render(request, 'tracker/product_detail.html', context)
 
