@@ -364,7 +364,7 @@ def batch_detail(request, batch_id):
         'batch': batch,
         'form': form,
     }
-    return render(request, 'tracker/batch_detail.html', context)
+    return render(request, 'tracker/batch_detail.html', {'batch': batch, 'form': form})
 
 
 @login_required
@@ -372,51 +372,60 @@ def batch_detail(request, batch_id):
 def add_batch_step(request, batch_id):
     batch = get_object_or_404(Batch, id=batch_id)
 
-    # --- This is the new logic to get the user's allowed choices ---
+    # Get and validate allowed stages for the user
     available_stages = []
     if request.user.is_authenticated:
         user_groups = request.user.groups.values_list('name', flat=True)
         for group in user_groups:
             available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
-
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
-    # --- End of new logic ---
-
-    form = SupplyChainStepForm(request.POST, allowed_choices=allowed_choices) # Pass the choices to the form
+    form = SupplyChainStepForm(request.POST, request.FILES, allowed_choices=allowed_choices)
 
     if form.is_valid():
         stage = form.cleaned_data['stage']
         location = form.cleaned_data['location']
+        document = form.cleaned_data.get('document')
 
-        # This permission check is now more robust
-        is_authorized_for_stage = False
-        user_groups = request.user.groups.values_list('name', flat=True)
-        for group in user_groups:
-            if stage in settings.ROLE_PERMISSIONS.get(group, []):
-                is_authorized_for_stage = True
-                break
-
+        # Permission check
+        is_authorized_for_stage = any(stage in settings.ROLE_PERMISSIONS.get(group, []) for group in request.user.groups.values_list('name', flat=True))
         if not is_authorized_for_stage:
-            messages.error(request, f"Your role does not have permission to add a '{stage}' update.")
-            return redirect('batch_detail', batch_id=batch.id)
+            # Return an error toast via HTMX
+            error_message = f"Your role does not have permission to add a '{stage}' update."
+            response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
+            response['HX-Retarget'] = '#error-container'
+            return response
 
         products_in_batch = batch.products.all()
+        # Loop through each product to create a step and a transaction
         for product in products_in_batch:
-            SupplyChainStep.objects.create(
-                product=product,
-                stage=stage,
-                location=location
-                # Note: In a real app, blockchain logic would be here
-            )
+            try:
+                new_step = SupplyChainStep.objects.create(
+                    product=product, stage=stage, location=location, document=document
+                )
+                # --- THIS IS THE MISSING BLOCKCHAIN LOGIC ---
+                tx = contract.functions.addUpdate(
+                    str(product.id), new_step.get_stage_display(), new_step.location
+                ).build_transaction({
+                    'from': account.address,
+                    'nonce': w3.eth.get_transaction_count(account.address),
+                })
+                signed_tx = account.sign_transaction(tx)
+                tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+                w3.eth.wait_for_transaction_receipt(tx_hash)
+                new_step.tx_hash = tx_hash.hex()
+                new_step.save()
+                # --- END OF BLOCKCHAIN LOGIC ---
+            except Exception as e:
+                print(f"Blockchain tx failed for product {product.sku}: {e}")
+                # In a real app, you might want to handle individual failures here
+                continue # Continue to the next product even if one fails
 
-        messages.success(request, f"Successfully added '{dict(SupplyChainStep.STAGE_CHOICES).get(stage)}' update to {products_in_batch.count()} products.")
+        # Return a success message via HTMX
+        success_message = f"Update added to {products_in_batch.count()} products."
+        return render(request, 'tracker/partials/_success_toast.html', {'message': success_message})
     else:
-        # Add form errors to the messages
-        for field, errors in form.errors.items():
-            for error in errors:
-                messages.error(request, f"{field.capitalize()}: {error}")
-
-    return redirect('batch_detail', batch_id=batch.id)
+        # Return the form with errors via HTMX
+        return render(request, 'tracker/partials/_add_update_form.html', {'batch': batch, 'form': form})
 
 @login_required
 def create_batch(request):

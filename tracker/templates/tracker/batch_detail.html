@@ -3,26 +3,27 @@
 {% block title %}{{ batch.name }}{% endblock %}
 
 {% block content %}
-<div class="mb-8 md:mb-12">
+<div class="mb-8">
     <div class="flex justify-between items-center">
         <div>
             <a href="{% url 'batch_list' %}" class="text-accent hover:text-white mb-4 inline-block text-sm">&larr; Back to All Batches</a>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-white">{{ batch.name }}</h1>
+            <h1 class="text-3xl font-bold text-white">{{ batch.name }}</h1>
         </div>
         <a href="{% url 'edit_batch' batch_id=batch.id %}" class="bg-base-100 hover:bg-accent text-white font-bold py-2 px-4 rounded-lg">
             Edit Batch
         </a>
     </div>
     <p class="text-accent font-mono mt-1">{{ batch.batch_id }}</p>
-    <p class="mt-4 max-w-2xl text-text-muted">{{ batch.description }}</p>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2">
-        <h2 class="text-2xl font-semibold text-white mb-4">Products in this Batch ({{ batch.products.count }})</h2>
-        <div class="bg-base-100 p-6 rounded-lg shadow-lg space-y-4">
+<div id="error-container"></div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-base-100 p-6 rounded-lg">
+        <h2 class="text-xl font-semibold text-white mb-4">Products in this Batch ({{ batch.products.count }})</h2>
+        <div class="space-y-3 max-h-96 overflow-y-auto">
             {% for product in batch.products.all %}
-            <a href="{% url 'product_detail' product_id=product.id %}" class="block p-3 bg-base-900 rounded-md hover:bg-accent hover:text-white transition-colors">
+            <a href="{% url 'product_detail' product_id=product.id %}" class="block p-3 bg-base-900 rounded-md hover:bg-accent/80 transition-colors">
                 <p class="font-medium">{{ product.name }} <span class="text-sm text-text-muted">({{ product.sku }})</span></p>
             </a>
             {% empty %}
@@ -31,21 +32,15 @@
         </div>
     </div>
 
-   <div class="space-y-8">
-        <div>
-             <h2 class="text-2xl font-semibold text-white mb-4">Add Batch Update</h2>
-             {% include 'tracker/partials/_add_update_form.html' with form_url='add_batch_step' object_id=batch.id %}
-        </div>
-        <div class="bg-base-100 p-6 rounded-lg shadow-lg text-center">
+    <div class="space-y-6">
+        <div class="bg-base-100 p-6 rounded-lg text-center">
             <h2 class="text-xl font-semibold text-white mb-4">Batch QR Code</h2>
-            <div class="flex justify-center">
-                <img src="{% url 'batch_qr_code' batch_id=batch.id %}" alt="QR Code for {{ batch.name }}" class="bg-white p-2 rounded-lg">
-            </div>
-            <a href="{% url 'batch_qr_code' batch_id=batch.id %}" download="{{ batch.batch_id }}_qrcode.png" class="inline-block mt-2 text-accent text-sm font-semibold hover:underline">
-                Download QR Code
+            <img src="{% url 'batch_qr_code' batch_id=batch.id %}" alt="QR Code for {{ batch.name }}" class="bg-white p-2 rounded-lg mx-auto max-w-48">
+            <a href="{% url 'batch_qr_code' batch_id=batch.id %}" download="{{ batch.batch_id }}_qrcode.png" class="inline-block mt-3 text-accent text-sm font-semibold hover:underline">
+                Download
             </a>
         </div>
+        {% include 'tracker/partials/_add_update_form.html' with form_url='add_batch_step' object_id=batch.id %}
     </div>
-
 </div>
 {% endblock %}
