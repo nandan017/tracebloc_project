@@ -24,5 +24,6 @@ urlpatterns = [
     path('batch/<uuid:batch_id>/', views.batch_detail, name='batch_detail'),
     path('batch/<uuid:batch_id>/add_step/', views.add_batch_step, name='add_batch_step'),
     path('batches/create/', views.create_batch, name='create_batch'),
+    path('batch/<uuid:batch_id>/edit/', views.edit_batch, name='edit_batch'),
 ]
 

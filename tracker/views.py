@@ -409,4 +409,38 @@ def create_batch(request):
     else:
         form = BatchCreationForm(user=request.user)
 
-    return render(request, 'tracker/create_batch.html', {'form': form})
+    return render(request, 'tracker/batch_form.html', {'form': form})
+
+@login_required
+def edit_batch(request, batch_id):
+    batch = get_object_or_404(Batch, id=batch_id)
+
+    if request.method == 'POST':
+        form = BatchCreationForm(request.POST, user=request.user, instance=batch)
+        if form.is_valid():
+            # Get the list of products currently in the batch
+            current_products = set(batch.products.all())
+            # Get the list of products selected in the form
+            selected_products = set(form.cleaned_data['products'])
+
+            # Add new products
+            products_to_add = selected_products - current_products
+            for product in products_to_add:
+                product.batch = batch
+                product.save()
+
+            # Remove old products
+            products_to_remove = current_products - selected_products
+            for product in products_to_remove:
+                product.batch = None
+                product.save()
+
+            # Save changes to the batch's own fields (name, description, etc.)
+            form.save()
+
+            return redirect('batch_detail', batch_id=batch.id)
+    else:
+        # Pre-populate the form with the batch's current data
+        form = BatchCreationForm(user=request.user, instance=batch, initial={'products': batch.products.all()})
+
+    return render(request, 'tracker/batch_form.html', {'form': form, 'batch': batch})

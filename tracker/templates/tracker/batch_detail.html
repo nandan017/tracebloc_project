@@ -4,8 +4,15 @@
 
 {% block content %}
 <div class="mb-8 md:mb-12">
-    <a href="{% url 'batch_list' %}" class="text-accent hover:text-white mb-4 inline-block text-sm">&larr; Back to All Batches</a>
-    <h1 class="text-4xl md:text-5xl font-extrabold text-white">{{ batch.name }}</h1>
+    <div class="flex justify-between items-center">
+        <div>
+            <a href="{% url 'batch_list' %}" class="text-accent hover:text-white mb-4 inline-block text-sm">&larr; Back to All Batches</a>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white">{{ batch.name }}</h1>
+        </div>
+        <a href="{% url 'edit_batch' batch_id=batch.id %}" class="bg-base-100 hover:bg-accent text-white font-bold py-2 px-4 rounded-lg">
+            Edit Batch
+        </a>
+    </div>
     <p class="text-accent font-mono mt-1">{{ batch.batch_id }}</p>
     <p class="mt-4 max-w-2xl text-text-muted">{{ batch.description }}</p>
 </div>

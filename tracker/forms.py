@@ -36,7 +36,7 @@ class BatchCreationForm(forms.ModelForm):
     products = forms.ModelMultipleChoiceField(
         queryset=None, # We will set this in the view
         widget=forms.CheckboxSelectMultiple,
-        required=True
+        required=False
     )
 
     class Meta:

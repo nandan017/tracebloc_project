@@ -1,10 +1,12 @@
 {% extends "tracker/base.html" %}
 
-{% block title %}Create New Batch{% endblock %}
+{% block title %}{% if batch %}Edit Batch{% else %}Create New Batch{% endif %}{% endblock %}
 
 {% block content %}
     <div class="max-w-4xl mx-auto mt-10">
-        <h2 class="text-3xl font-bold text-white text-center mb-8">Create a New Product Batch</h2>
+        <h2 class="text-3xl font-bold text-white text-center mb-8">
+            {% if batch %}Edit {{ batch.name }}{% else %}Create a New Product Batch{% endif %}
+        </h2>
         <form method="post" class="bg-base-100 p-8 rounded-lg shadow-lg">
             {% csrf_token %}
             <div class="space-y-6">
@@ -24,22 +26,24 @@
                 </div>
 
                 <div class="border-t border-base-900 pt-6">
-                    <h3 class="text-lg font-semibold text-white mb-3">Select Products to Add</h3>
+                    <h3 class="text-lg font-semibold text-white mb-3">
+                        {% if batch %}Manage Products in this Batch{% else %}Select Products to Add{% endif %}
+                    </h3>
                     <div class="bg-base-900 p-4 rounded-lg max-h-60 overflow-y-auto space-y-3">
                         {% for product_choice in form.products %}
-                            <label for="{{ product_choice.id_for_label }}" class="flex items-center space-x-3 p-2 rounded-md hover:bg-base-100/50">
+                            <label for="{{ product_choice.id_for_label }}" class="flex items-center space-x-3 p-2 rounded-md hover:bg-base-100/50 cursor-pointer">
                                 {{ product_choice.tag }}
                                 <span class="text-text">{{ product_choice.choice_label }}</span>
                             </label>
                         {% empty %}
-                            <p class="text-text-muted text-sm">You have no available products to add to a new batch.</p>
+                            <p class="text-text-muted text-sm">You have no available products to add to a batch.</p>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
             <button type="submit" class="w-full text-white bg-accent hover:bg-accent-hover font-bold rounded-lg text-sm px-5 py-3 text-center !mt-8">
-                Create Batch
+                Save Changes
             </button>
         </form>
     </div>
