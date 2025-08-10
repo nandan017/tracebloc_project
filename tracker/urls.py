@@ -17,5 +17,7 @@ urlpatterns = [
     path('product/create/', views.create_product, name='create_product'),
     # New URL for product deletion
     path('product/<uuid:product_id>/delete/', views.delete_product, name='delete_product'),
+    # New URL for analytics
+    path('analytics/', views.analytics_view, name='analytics_dashboard'),
 ]
 

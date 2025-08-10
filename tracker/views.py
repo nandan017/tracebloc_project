@@ -3,6 +3,8 @@ import os
 import json
 from dotenv import load_dotenv
 from web3 import Web3
+from django.db.models import Count
+from collections import defaultdict
 from web3.middleware import ExtraDataToPOAMiddleware
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
@@ -256,3 +258,41 @@ def profile_view(request):
         'associated_products': associated_products,
     }
     return render(request, 'registration/profile.html', context)
+
+@login_required
+def analytics_view(request):
+    # Metric 1: Product Status Overview (Count of steps in each stage)
+    stage_counts = SupplyChainStep.objects.values('stage').annotate(count=Count('id')).order_by('-count')
+
+    stage_labels = [dict(SupplyChainStep.STAGE_CHOICES).get(item['stage']) for item in stage_counts]
+    stage_data = [item['count'] for item in stage_counts]
+
+    # Metric 2: Average Time Per Stage
+    products = Product.objects.prefetch_related('steps').all()
+    time_diffs = defaultdict(list)
+
+    for product in products:
+        # Sort steps by timestamp to calculate duration
+        steps = sorted(list(product.steps.all()), key=lambda x: x.timestamp)
+        for i in range(len(steps) - 1):
+            current_step = steps[i]
+            next_step = steps[i+1]
+            duration = next_step.timestamp - current_step.timestamp
+            time_diffs[current_step.stage].append(duration.total_seconds())
+
+    avg_times = {}
+    for stage, durations in time_diffs.items():
+        avg_seconds = sum(durations) / len(durations)
+        avg_days = avg_seconds / (60 * 60 * 24) # Convert seconds to days
+        avg_times[dict(SupplyChainStep.STAGE_CHOICES).get(stage)] = round(avg_days, 2)
+
+    avg_time_labels = list(avg_times.keys())
+    avg_time_data = list(avg_times.values())
+
+    context = {
+        'stage_labels': stage_labels,
+        'stage_data': stage_data,
+        'avg_time_labels': avg_time_labels,
+        'avg_time_data': avg_time_data,
+    }
+    return render(request, 'tracker/analytics.html', context)

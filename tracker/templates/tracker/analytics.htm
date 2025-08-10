@@ -1,0 +1,95 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+{{ stage_labels|json_script:"stage-labels" }}
+{{ stage_data|json_script:"stage-data" }}
+{{ avg_time_labels|json_script:"avg-time-labels" }}
+{{ avg_time_data|json_script:"avg-time-data" }}
+
+<div class="mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold text-white">Analytics Dashboard</h1>
+    <p class="text-text-muted mt-2">Insights into your supply chain performance.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-base-100 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold text-white mb-4">Activity by Stage</h2>
+        <canvas id="stageOverviewChart"></canvas>
+    </div>
+
+    <div class="bg-base-100 p-6 rounded-lg shadow-lg">
+        <h2 class="text-xl font-semibold text-white mb-4">Average Time per Stage (in Days)</h2>
+        <canvas id="avgTimeChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // --- Safely parse data from Django ---
+    const stageLabels = JSON.parse(document.getElementById('stage-labels').textContent);
+    const stageData = JSON.parse(document.getElementById('stage-data').textContent);
+    const avgTimeLabels = JSON.parse(document.getElementById('avg-time-labels').textContent);
+    const avgTimeData = JSON.parse(document.getElementById('avg-time-data').textContent);
+
+    // --- Chart 1: Stage Overview (Donut Chart) ---
+    const stageCtx = document.getElementById('stageOverviewChart').getContext('2d');
+    new Chart(stageCtx, {
+        type: 'doughnut',
+        data: {
+            labels: stageLabels,
+            datasets: [{
+                label: 'Number of Updates',
+                data: stageData,
+                backgroundColor: [
+                    'rgba(255, 69, 0, 0.7)',
+                    'rgba(255, 140, 0, 0.7)',
+                    'rgba(255, 165, 0, 0.7)',
+                    'rgba(255, 200, 0, 0.7)',
+                    'rgba(180, 180, 180, 0.7)',
+                    'rgba(120, 120, 120, 0.7)',
+                ],
+                borderColor: '#111111',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: '#E5E7EB' }
+                }
+            }
+        }
+    });
+
+    // --- Chart 2: Average Time (Bar Chart) ---
+    const avgTimeCtx = document.getElementById('avgTimeChart').getContext('2d');
+    new Chart(avgTimeCtx, {
+        type: 'bar',
+        data: {
+            labels: avgTimeLabels,
+            datasets: [{
+                label: 'Average Days',
+                data: avgTimeData,
+                backgroundColor: 'rgba(255, 69, 0, 0.7)',
+                borderColor: 'rgba(255, 69, 0, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Horizontal bar chart
+            responsive: true,
+            scales: {
+                x: { ticks: { color: '#9CA3AF' }, grid: { color: '#1F1F1F' } },
+                y: { ticks: { color: '#9CA3AF' }, grid: { color: '#1F1F1F' } }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+</script>
+{% endblock %}
