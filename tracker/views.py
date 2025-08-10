@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from web3 import Web3
 from django.db.models import Count
 from collections import defaultdict
+from django.db.models import Q
+from django.core.paginator import Paginator
 from web3.middleware import ExtraDataToPOAMiddleware
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
@@ -48,16 +50,39 @@ contract = w3.eth.contract(address=checksum_address, abi=contract_abi)
 
 
 def product_list(request):
-    products = Product.objects.all().order_by('-created_at')
+    # Start with all products
+    queryset = Product.objects.all().order_by('-created_at')
 
-    # Check if the logged-in user is in the 'Customer' group
-    is_customer = False
-    if request.user.is_authenticated:
-        is_customer = request.user.groups.filter(name='Customer').exists()
+    # Get search and filter parameters from the URL
+    search_query = request.GET.get('q', '')
+    stage_filter = request.GET.get('stage', '')
+
+    # Apply search filter if a query is provided
+    if search_query:
+        queryset = queryset.filter(
+            Q(name__icontains=search_query) |
+            Q(sku__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+
+    # Apply stage filter if a stage is selected
+    if stage_filter:
+        queryset = queryset.filter(steps__stage=stage_filter).distinct()
+
+    # Apply pagination
+    paginator = Paginator(queryset, 9) # Show 9 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Get all possible stages for the filter dropdown
+    stage_choices = SupplyChainStep.STAGE_CHOICES
 
     context = {
-        'products': products,
-        'is_customer': is_customer, # Pass the flag to the template
+        'page_obj': page_obj,
+        'is_customer': request.user.is_authenticated and request.user.groups.filter(name='Customer').exists(),
+        'stage_choices': stage_choices,
+        'search_query': search_query,
+        'stage_filter': stage_filter,
     }
     return render(request, 'tracker/product_list.html', context)
 

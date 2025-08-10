@@ -3,17 +3,34 @@
 {% block title %}All Products - TraceBloc{% endblock %}
 
 {% block content %}
-<div class="flex justify-between items-center mb-8">
-    <h1 class="text-3xl md:text-3xl font-bold text-white">Tracked Products</h1>
+<div class="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-8">
+    <div>
+        <h1 class="text-3xl md:text-4xl font-bold text-white">Tracked Products</h1>
+        {% if search_query or stage_filter %}
+            <p class="text-text-muted mt-2">Showing results for your search.</p>
+        {% endif %}
+    </div>
     {% if user.is_authenticated and not is_customer %}
-        <a href="{% url 'create_product' %}" class="bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-lg transition-colors">
+        <a href="{% url 'create_product' %}" class="bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-lg transition-colors w-full md:w-auto text-center">
             + Register New Product
         </a>
     {% endif %}
 </div>
 
+<form method="get" class="bg-base-100 p-4 rounded-lg mb-8 flex flex-col md:flex-row gap-4">
+    <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name, SKU, or description..." class="flex-grow bg-base-900 border border-base-100/50 text-text text-sm rounded-lg focus:ring-accent focus:border-accent block w-full p-2.5">
+    <select name="stage" class="bg-base-900 border border-base-100/50 text-text text-sm rounded-lg focus:ring-accent focus:border-accent block w-full md:w-64 p-2.5">
+        <option value="">Filter by Stage...</option>
+        {% for value, text in stage_choices %}
+            <option value="{{ value }}" {% if stage_filter == value %}selected{% endif %}>{{ text }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-lg transition-colors w-full md:w-auto">Filter</button>
+</form>
+
+{% if page_obj %}
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    {% for product in products %}
+    {% for product in page_obj %}
         <a href="{% url 'product_detail' product_id=product.id %}" class="block group">
             <div class="bg-base-100 p-6 rounded-lg border border-base-100/50 group-hover:border-accent group-hover:scale-105 transition-all duration-300 ease-in-out h-full">
                 <h2 class="text-xl font-bold text-white">{{ product.name }}</h2>
@@ -21,10 +38,27 @@
                 <p class="mt-4 text-text-muted text-sm leading-relaxed">{{ product.description|truncatewords:20 }}</p>
             </div>
         </a>
-    {% empty %}
-        <div class="col-span-full bg-base-100 text-center p-12 rounded-lg">
-            <p class="text-text-muted">No products have been added yet. Please add some in the admin panel.</p>
-        </div>
     {% endfor %}
+</div>
+{% else %}
+    <div class="col-span-full bg-base-100 text-center p-12 rounded-lg">
+        <p class="text-text-muted">No products found matching your search.</p>
+    </div>
+{% endif %}
+
+<div class="flex justify-center items-center mt-12 space-x-4 text-text-muted">
+    {% if page_obj.has_previous %}
+        <a href="?page=1&q={{ search_query }}&stage={{ stage_filter }}" class="hover:text-accent">&laquo; First</a>
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&stage={{ stage_filter }}" class="hover:text-accent">Previous</a>
+    {% endif %}
+
+    <span class="text-white">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+    </span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&stage={{ stage_filter }}" class="hover:text-accent">Next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&q={{ search_query }}&stage={{ stage_filter }}" class="hover:text-accent">Last &raquo;</a>
+    {% endif %}
 </div>
 {% endblock %}
