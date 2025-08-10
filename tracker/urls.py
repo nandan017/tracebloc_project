@@ -25,5 +25,7 @@ urlpatterns = [
     path('batch/<uuid:batch_id>/add_step/', views.add_batch_step, name='add_batch_step'),
     path('batches/create/', views.create_batch, name='create_batch'),
     path('batch/<uuid:batch_id>/edit/', views.edit_batch, name='edit_batch'),
+    path('track/batch/<uuid:batch_id>/', views.public_batch_view, name='public_batch_page'),
+    path('batch/<uuid:batch_id>/qr_code/', views.batch_qr_code_view, name='batch_qr_code'),
 ]
 

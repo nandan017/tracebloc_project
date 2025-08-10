@@ -31,9 +31,21 @@
         </div>
     </div>
 
-    <div class="lg:col-span-1">
-         <h2 class="text-2xl font-semibold text-white mb-4">Add Batch Update</h2>
-         {% include 'tracker/partials/_add_update_form.html' with form_url='add_batch_step' object_id=batch.id %}
+   <div class="space-y-8">
+        <div>
+             <h2 class="text-2xl font-semibold text-white mb-4">Add Batch Update</h2>
+             {% include 'tracker/partials/_add_update_form.html' with form_url='add_batch_step' object_id=batch.id %}
+        </div>
+        <div class="bg-base-100 p-6 rounded-lg shadow-lg text-center">
+            <h2 class="text-xl font-semibold text-white mb-4">Batch QR Code</h2>
+            <div class="flex justify-center">
+                <img src="{% url 'batch_qr_code' batch_id=batch.id %}" alt="QR Code for {{ batch.name }}" class="bg-white p-2 rounded-lg">
+            </div>
+            <a href="{% url 'batch_qr_code' batch_id=batch.id %}" download="{{ batch.batch_id }}_qrcode.png" class="inline-block mt-2 text-accent text-sm font-semibold hover:underline">
+                Download QR Code
+            </a>
+        </div>
     </div>
+
 </div>
 {% endblock %}

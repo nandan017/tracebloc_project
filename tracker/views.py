@@ -371,26 +371,50 @@ def batch_detail(request, batch_id):
 @require_POST
 def add_batch_step(request, batch_id):
     batch = get_object_or_404(Batch, id=batch_id)
-    form = SupplyChainStepForm(request.POST) # We don't need choices here, just for validation
+
+    # --- This is the new logic to get the user's allowed choices ---
+    available_stages = []
+    if request.user.is_authenticated:
+        user_groups = request.user.groups.values_list('name', flat=True)
+        for group in user_groups:
+            available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
+
+    allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
+    # --- End of new logic ---
+
+    form = SupplyChainStepForm(request.POST, allowed_choices=allowed_choices) # Pass the choices to the form
 
     if form.is_valid():
         stage = form.cleaned_data['stage']
         location = form.cleaned_data['location']
 
+        # This permission check is now more robust
+        is_authorized_for_stage = False
+        user_groups = request.user.groups.values_list('name', flat=True)
+        for group in user_groups:
+            if stage in settings.ROLE_PERMISSIONS.get(group, []):
+                is_authorized_for_stage = True
+                break
+
+        if not is_authorized_for_stage:
+            messages.error(request, f"Your role does not have permission to add a '{stage}' update.")
+            return redirect('batch_detail', batch_id=batch.id)
+
         products_in_batch = batch.products.all()
         for product in products_in_batch:
-            # Create a new step for each product in the batch
-            new_step = SupplyChainStep.objects.create(
+            SupplyChainStep.objects.create(
                 product=product,
                 stage=stage,
                 location=location
+                # Note: In a real app, blockchain logic would be here
             )
-            # Note: Blockchain transaction logic would go here for each step.
-            # This can be very slow for large batches.
 
-        messages.success(request, f"Successfully added '{dict(SupplyChainStep.STAGE_CHOICES).get(stage)}' update to {products_in_batch.count()} products in the batch.")
+        messages.success(request, f"Successfully added '{dict(SupplyChainStep.STAGE_CHOICES).get(stage)}' update to {products_in_batch.count()} products.")
     else:
-        messages.error(request, "There was an error with your submission.")
+        # Add form errors to the messages
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, f"{field.capitalize()}: {error}")
 
     return redirect('batch_detail', batch_id=batch.id)
 
@@ -444,3 +468,18 @@ def edit_batch(request, batch_id):
         form = BatchCreationForm(user=request.user, instance=batch, initial={'products': batch.products.all()})
 
     return render(request, 'tracker/batch_form.html', {'form': form, 'batch': batch})
+
+def public_batch_view(request, batch_id):
+    """A public, read-only view for an entire batch."""
+    batch = get_object_or_404(Batch, id=batch_id)
+    return render(request, 'tracker/public_batch_page.html', {'batch': batch})
+
+def batch_qr_code_view(request, batch_id):
+    """Generates a QR code for a batch's public tracking page."""
+    public_url = request.build_absolute_uri(
+        reverse('public_batch_page', args=[str(batch_id)])
+    )
+    qr_image = qrcode.make(public_url, box_size=10, border=4)
+    buffer = BytesIO()
+    qr_image.save(buffer, format='PNG')
+    return HttpResponse(buffer.getvalue(), content_type="image/png")

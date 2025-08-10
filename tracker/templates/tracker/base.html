@@ -79,7 +79,16 @@
     </header>
 
     <main class="container mx-auto p-6 md:p-8 flex-grow">
-        {% block content %}{% endblock %}
+      {% if messages %}
+        <div class="space-y-2 mb-6">
+          {% for message in messages %}
+            <div class="p-4 rounded-md {% if message.tags == 'error' %}bg-red-500/20 text-red-300{% else %}bg-green-500/20 text-green-300{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+      {% endif %}
+      {% block content %}{% endblock %}
     </main>
 
     <footer class="bg-base-900 border-t border-base-100 mt-8">
