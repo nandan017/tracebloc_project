@@ -64,6 +64,7 @@
                     <a href="{% url 'product_list' %}" class="text-sm text-text-muted hover:text-accent transition-colors">All Products</a>
                 {% endif %}
                 {% if user.is_authenticated %}
+                    <a href="{% url 'batch_list' %}" class="text-sm text-text-muted hover:text-accent transition-colors">Batches</a>
                     <a href="{% url 'analytics_dashboard' %}" class="text-sm text-text-muted hover:text-accent transition-colors">Analytics</a>
                     <a href="{% url 'profile' %}" class="text-sm text-text-muted hover:text-accent transition-colors">Profile</a>
                     <form action="{% url 'logout' %}" method="post" class="inline">

@@ -19,5 +19,9 @@ urlpatterns = [
     path('product/<uuid:product_id>/delete/', views.delete_product, name='delete_product'),
     # New URL for analytics
     path('analytics/', views.analytics_view, name='analytics_dashboard'),
+    # New URLs for Batch Management
+    path('batches/', views.batch_list, name='batch_list'),
+    path('batch/<uuid:batch_id>/', views.batch_detail, name='batch_detail'),
+    path('batch/<uuid:batch_id>/add_step/', views.add_batch_step, name='add_batch_step'),
 ]
 

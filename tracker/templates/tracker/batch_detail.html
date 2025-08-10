@@ -1,0 +1,32 @@
+{% extends "tracker/base.html" %}
+
+{% block title %}{{ batch.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-8 md:mb-12">
+    <a href="{% url 'batch_list' %}" class="text-accent hover:text-white mb-4 inline-block text-sm">&larr; Back to All Batches</a>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-white">{{ batch.name }}</h1>
+    <p class="text-accent font-mono mt-1">{{ batch.batch_id }}</p>
+    <p class="mt-4 max-w-2xl text-text-muted">{{ batch.description }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2">
+        <h2 class="text-2xl font-semibold text-white mb-4">Products in this Batch ({{ batch.products.count }})</h2>
+        <div class="bg-base-100 p-6 rounded-lg shadow-lg space-y-4">
+            {% for product in batch.products.all %}
+            <a href="{% url 'product_detail' product_id=product.id %}" class="block p-3 bg-base-900 rounded-md hover:bg-accent hover:text-white transition-colors">
+                <p class="font-medium">{{ product.name }} <span class="text-sm text-text-muted">({{ product.sku }})</span></p>
+            </a>
+            {% empty %}
+            <p class="text-text-muted">No products have been assigned to this batch yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="lg:col-span-1">
+         <h2 class="text-2xl font-semibold text-white mb-4">Add Batch Update</h2>
+         {% include 'tracker/partials/_add_update_form.html' with batch_id=batch.id form_url='add_batch_step' %}
+    </div>
+</div>
+{% endblock %}

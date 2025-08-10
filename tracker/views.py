@@ -14,7 +14,8 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.contrib.auth.models import Group
-from .models import Product, SupplyChainStep
+from django.contrib import messages
+from .models import Product, SupplyChainStep, Batch
 from .forms import SupplyChainStepForm, ProductForm, CustomUserCreationForm
 import qrcode
 from io import BytesIO
@@ -326,3 +327,61 @@ def analytics_view(request):
         'total_updates': sum(stage_data),
     }
     return render(request, 'tracker/analytics.html', context)
+
+@login_required
+def batch_list(request):
+    batches = Batch.objects.all().order_by('-created_at')
+    paginator = Paginator(batches, 10) # Show 10 batches per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    return render(request, 'tracker/batch_list.html', {'page_obj': page_obj})
+
+
+@login_required
+def batch_detail(request, batch_id):
+    batch = get_object_or_404(Batch, id=batch_id)
+
+    # This is the same logic from product_detail to get available stages
+    available_stages = []
+    if request.user.is_authenticated:
+        user_groups = request.user.groups.values_list('name', flat=True)
+        for group in user_groups:
+            available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
+
+    available_stages = sorted(list(set(available_stages)))
+    allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
+    form = SupplyChainStepForm(allowed_choices=allowed_choices)
+
+    context = {
+        'batch': batch,
+        'form': form,
+    }
+    return render(request, 'tracker/batch_detail.html', context)
+
+
+@login_required
+@require_POST
+def add_batch_step(request, batch_id):
+    batch = get_object_or_404(Batch, id=batch_id)
+    form = SupplyChainStepForm(request.POST) # We don't need choices here, just for validation
+
+    if form.is_valid():
+        stage = form.cleaned_data['stage']
+        location = form.cleaned_data['location']
+
+        products_in_batch = batch.products.all()
+        for product in products_in_batch:
+            # Create a new step for each product in the batch
+            new_step = SupplyChainStep.objects.create(
+                product=product,
+                stage=stage,
+                location=location
+            )
+            # Note: Blockchain transaction logic would go here for each step.
+            # This can be very slow for large batches.
+
+        messages.success(request, f"Successfully added '{dict(SupplyChainStep.STAGE_CHOICES).get(stage)}' update to {products_in_batch.count()} products in the batch.")
+    else:
+        messages.error(request, "There was an error with your submission.")
+
+    return redirect('batch_detail', batch_id=batch.id)

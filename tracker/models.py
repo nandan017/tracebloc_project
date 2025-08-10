@@ -4,6 +4,19 @@ import uuid
 
 # Create your models here.
 
+class Batch(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    batch_id = models.CharField(max_length=100, unique=True, help_text="A unique identifier for this batch")
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Batches"
+
+    def __str__(self):
+        return f"{self.name} ({self.batch_id})"
+
 class Product(models.Model):
     # A unique ID for each product, easier to handle than the default 1, 2, 3...
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -12,6 +25,9 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     authorized_users = models.ManyToManyField(User, related_name='tracked_products', blank=True)
+
+    # New field to link a Product to a Batch
+    batch = models.ForeignKey(Batch, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
 
     def __str__(self):
         return f"{self.name} ({self.sku})"
