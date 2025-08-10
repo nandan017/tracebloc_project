@@ -1,92 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}TraceBloc{% endblock %}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TraceBloc{% endblock %}</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            'base': {
-              100: '#2A2A2A', // Dark grey for cards/elements
-              900: '#1a1a1a', // Rich black for backgrounds
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
             },
-            'accent': {
-              DEFAULT: '#FF4500', // A vibrant orange-red
-              hover: '#E63E00',   // A slightly darker orange for hover effects
-            },
-            'text': {
-              DEFAULT: '#E5E7EB', // A light grey for primary text
-              muted: '#9CA3AF',   // A muted grey for secondary text
-            },
+            colors: {
+              'base': {
+                100: '#1F1F1F', // Darker grey for cards/elements with a hint of color
+                900: '#111111', // A slightly softer black for backgrounds
+              },
+              'accent': {
+                DEFAULT: '#FF4500', // Vibrant orange-red
+                hover: '#E63E00',   // Darker orange for hover
+              },
+              'text': {
+                DEFAULT: '#E5E7EB', // Light grey for primary text
+                muted: '#9CA3AF',   // Muted grey for secondary text
+              },
+            }
           }
         }
       }
-    }
-  </script>
+    </script>
 
-  <style>
-    .htmx-indicator-form.htmx-request .btn-text {
-      display: none;
-    }
-
-    .htmx-indicator-form:not(.htmx-request) .btn-loader {
-      display: none;
-    }
-  </style>
+    <style type="text/tailwindcss">
+        .htmx-indicator-form.htmx-request .btn-text {
+            display: none;
+        }
+        .htmx-indicator-form:not(.htmx-request) .btn-loader {
+            display: none;
+        }
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
 </head>
+<body class="bg-base-900 text-text font-sans flex flex-col min-h-screen">
 
-<body class="bg-base-900 text-text flex flex-col min-h-screen">
+    <header class="sticky top-0 z-50 bg-base-900/70 backdrop-blur-lg border-b border-base-100">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <a href="{% url 'product_list' %}" class="text-white font-extrabold text-xl hover:text-accent transition-colors">
+                    TraceBloc
+                </a>
+            </div>
+            <div class="flex items-center space-x-6">
+                {% if request.resolver_match.view_name != 'product_list' %}
+                    <a href="{% url 'product_list' %}" class="text-sm text-text-muted hover:text-accent transition-colors">All Products</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}" class="text-sm text-text-muted hover:text-accent transition-colors">Profile</a>
+                    <form action="{% url 'logout' %}" method="post" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="bg-transparent border-none p-0 text-sm text-text-muted hover:text-accent transition-colors cursor-pointer">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-sm text-text-muted hover:text-accent transition-colors">Login</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
 
-  <header class="bg-base-100 shadow-md">
-    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-      <div>
-        <a href="{% url 'product_list' %}" class="text-white font-bold text-xl hover:text-accent">
-          TraceBloc
-        </a>
-      </div>
-      <div class="flex items-center space-x-6">
+    <main class="container mx-auto p-6 md:p-8 flex-grow">
+        {% block content %}{% endblock %}
+    </main>
 
-        {% if request.resolver_match.view_name != 'product_list' %}
-        <a href="{% url 'product_list' %}" class="text-text-muted hover:text-accent">
-          All Products
-        </a>
-        {% endif %}
+    <footer class="bg-base-900 border-t border-base-100 mt-8">
+        <div class="container mx-auto px-6 py-4 text-center text-text-muted text-sm">
+            <p>&copy; 2025 TraceBloc. All rights reserved.</p>
+        </div>
+    </footer>
 
-        {% if user.is_authenticated %}
-        <span class="text-white">Hi, {{ user.username }}</span>
-        <a href="{% url 'profile' %}" class="text-text-muted hover:text-accent">Profile</a>
-        <form action="{% url 'logout' %}" method="post" class="inline">
-          {% csrf_token %}
-          <button type="submit" class="bg-transparent border-none p-0 text-text-muted hover:text-accent cursor-pointer">
-            Logout
-          </button>
-        </form>
-        {% else %}
-        <a href="{% url 'login' %}" class="text-text-muted hover:text-accent">Login</a>
-        {% endif %}
-      </div>
-    </nav>
-  </header>
-
-  <main class="container mx-auto p-6 md:p-8 flex-grow">
-    {% block content %}{% endblock %}
-  </main>
-
-  <footer class="bg-base-100 mt-8">
-    <div class="container mx-auto px-6 py-4 text-center text-text-muted">
-      <p>&copy; 2025 TraceBloc. All rights reserved.</p>
-    </div>
-  </footer>
-
-  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 
 </body>
-
 </html>

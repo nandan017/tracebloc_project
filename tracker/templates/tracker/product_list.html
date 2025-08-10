@@ -3,25 +3,28 @@
 {% block title %}All Products - TraceBloc{% endblock %}
 
 {% block content %}
-   <div class="flex justify-between items-center mb-8">
-        <h1 class="text-4xl font-bold text-white">Tracked Products</h1>
-        {% if user.is_authenticated and not is_customer %}
-            <a href="{% url 'create_product' %}" class="bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-lg">
-                + Register New Product
-            </a>
-        {% endif %}
-    </div>
-    
-   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl md:text-4xl font-bold text-white">Tracked Products</h1>
+    {% if user.is_authenticated and not user.groups.filter(name='Customer').exists() %}
+        <a href="{% url 'create_product' %}" class="bg-accent hover:bg-accent-hover text-white font-bold py-2 px-4 rounded-lg transition-colors">
+            + Register New Product
+        </a>
+    {% endif %}
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {% for product in products %}
-        <div class="bg-base-100 p-6 rounded-lg shadow-lg hover:ring-2 hover:ring-accent transition-all">
-            <h2 class="text-2xl font-bold text-white">{{ product.name }}</h2>
-            <p class="text-accent font-mono mt-1">{{ product.sku }}</p>
-            <p class="mt-4 text-text-muted">{{ product.description|truncatewords:20 }}</p>
-            <a href="{% url 'product_detail' product_id=product.id %}" class="inline-block mt-4 text-accent font-semibold hover:text-white">View Details &rarr;</a>
-        </div>
+        <a href="{% url 'product_detail' product_id=product.id %}" class="block group">
+            <div class="bg-base-100 p-6 rounded-lg border border-base-100/50 group-hover:border-accent group-hover:scale-105 transition-all duration-300 ease-in-out h-full">
+                <h2 class="text-xl font-bold text-white">{{ product.name }}</h2>
+                <p class="text-accent font-mono text-sm mt-1">{{ product.sku }}</p>
+                <p class="mt-4 text-text-muted text-sm leading-relaxed">{{ product.description|truncatewords:20 }}</p>
+            </div>
+        </a>
     {% empty %}
-        <p class="text-text-muted col-span-full">No products have been added yet. Please add some in the admin panel.</p>
+        <div class="col-span-full bg-base-100 text-center p-12 rounded-lg">
+            <p class="text-text-muted">No products have been added yet. Please add some in the admin panel.</p>
+        </div>
     {% endfor %}
 </div>
 {% endblock %}
