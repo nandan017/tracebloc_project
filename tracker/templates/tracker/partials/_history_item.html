@@ -1,11 +1,28 @@
-<div class="bg-brand-grey-dark p-4 rounded-lg flex items-start gap-4">
-    <div class="w-4 h-4 rounded-full bg-brand-orange mt-1"></div>
-    <div>
-        <p class="font-bold text-white">{{ step.get_stage_display }}</p>
-        <p class="text-brand-grey-light">{{ step.location }}</p>
-        <small class="text-brand-grey">{{ step.timestamp|date:"F j, Y, g:i a" }}</small>
+<div class="relative pl-12 pb-8">
+    <div class="absolute left-0 top-2 w-8 h-8 bg-base-100 rounded-full flex items-center justify-center ring-8 ring-base-900">
+        {% if step.stage == 'sourcing' %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M11.25 3.75c-1.32 0-2.553.26-3.75.75v14.5l3.75-.75 3.75.75V4.5c-1.197-.49-2.43-.75-3.75-.75zM12 21.75a2.25 2.25 0 01-2.25-2.25v-8.062a3 3 0 01.308-1.258l.42-1.05a2.25 2.25 0 014.044 0l.42 1.05a3 3 0 01.308 1.258v8.062A2.25 2.25 0 0112 21.75z"></path></svg>
+        {% elif step.stage == 'manufacturing' %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21.75 9.75a.75.75 0 01-.75.75h-3.375a3 3 0 00-3-3V4.125a.75.75 0 011.5 0V6h1.125a.75.75 0 010 1.5H16.5v1.125a.75.75 0 01-1.5 0V7.5h-1.875a.75.75 0 010-1.5H15V4.125a.75.75 0 011.5 0V6h1.125a.75.75 0 01.75.75v3zm-3.375 9c-1.24 0-2.25-1.01-2.25-2.25s1.01-2.25 2.25-2.25 2.25 1.01 2.25 2.25-1.01 2.25-2.25 2.25z"></path><path fill-rule="evenodd" d="M12.969 3.03a.75.75 0 01.738 1.052l-3.352 9.387a.75.75 0 01-1.404-.502l3.352-9.387a.75.75 0 01.666-.55zm4.053 5.373a.75.75 0 011.052-.738l3.352 1.2a.75.75 0 01-.502 1.404l-3.352-1.2a.75.75 0 01-.55-.666zm-8.485 5.54a.75.75 0 011.052-.738l9.387 3.352a.75.75 0 01-.502 1.404l-9.387-3.352a.75.75 0 01-.55-.666zM2.25 12.75a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" clip-rule="evenodd"></path></svg>
+        {% elif step.stage == 'packing' %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M5.572 6.052a1.498 1.498 0 011.06-.448H17.25a.75.75 0 01.75.75v9.75a.75.75 0 01-.75.75H6.75a.75.75 0 01-.75-.75V6.75a.75.75 0 01.448-1.06l11.25-3.375a.75.75 0 01.976.863l-1.053 3.513a.75.75 0 01-1.22.42l-1.423-1.423a.75.75 0 00-1.06 0l-2.122 2.121a.75.75 0 01-1.06 0l-2.122-2.121a.75.75 0 00-1.061 0l-1.422 1.422a.75.75 0 01-1.22-.42L5.572 6.052z"></path><path fill-rule="evenodd" d="M4.5 18a.75.75 0 00.75.75h13.5a.75.75 0 000-1.5H5.25a.75.75 0 00-.75.75z" clip-rule="evenodd"></path></svg>
+        {% elif step.stage == 'shipping' or step.stage == 'delivery' %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25zM13.5 15h-12v2.625c0 1.035.84 1.875 1.875 1.875h.375a3 3 0 116.25 0h.375c1.035 0 1.875-.84 1.875-1.875V15z"></path><path d="M16.5 6.375c0-1.036.84-1.875 1.875-1.875h.375a1.875 1.875 0 011.875 1.875v8.25A1.875 1.875 0 0120.625 16.5h-.375a1.875 1.875 0 01-1.875-1.875V6.375z"></path><path d="M17.25 18.375a3 3 0 013-3h1.125a.75.75 0 010 1.5h-1.125a1.5 1.5 0 00-1.5 1.5.75.75 0 01-1.5 0z"></path></svg>
+        {% elif step.stage == 'retail' %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M11.32 2.656a1.5 1.5 0 011.36 0L20.25 7.5h-2.579a.75.75 0 01-.75-.75V5.625a.75.75 0 00-.75-.75H15a.75.75 0 00-.75.75v.375a.75.75 0 01-.75.75H8.25a.75.75 0 01-.75-.75V5.625a.75.75 0 00-.75-.75H6a.75.75 0 00-.75.75v1.125a.75.75 0 01-.75.75H2.25l7.57-4.844z" clip-rule="evenodd"></path><path d="M3 9.375a.75.75 0 01.75-.75h16.5a.75.75 0 01.75.75v10.125a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5V9.375z"></path></svg>
+        {% else %}
+            <svg class="w-4 h-4 text-accent" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clip-rule="evenodd"></path></svg>
+        {% endif %}
+    </div>
+
+    <div class="bg-base-100 p-4 rounded-lg shadow-md">
+        <p class="font-bold text-white text-lg">{{ step.get_stage_display }}</p>
+        <p class="text-text-muted">{{ step.location }}</p>
+        <p class="text-sm text-text-muted mt-2">{{ step.timestamp|date:"F j, Y, g:i a" }}</p>
         {% if step.tx_hash %}
-            <p class="font-mono text-xs text-brand-orange mt-1">Tx: {{ step.tx_hash }}</p>
+            <a href="https://www.oklink.com/amoy/tx/{{ step.tx_hash }}" target="_blank" rel="noopener noreferrer" class="font-mono text-xs text-accent hover:underline mt-2 inline-block truncate w-full">
+                Tx: {{ step.tx_hash }}
+            </a>
         {% endif %}
     </div>
 </div>

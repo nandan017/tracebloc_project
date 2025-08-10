@@ -261,18 +261,15 @@ def profile_view(request):
 
 @login_required
 def analytics_view(request):
-    # Metric 1: Product Status Overview (Count of steps in each stage)
-    stage_counts = SupplyChainStep.objects.values('stage').annotate(count=Count('id')).order_by('-count')
-
-    stage_labels = [dict(SupplyChainStep.STAGE_CHOICES).get(item['stage']) for item in stage_counts]
+    # Metric 1: Activity by Stage
+    stage_counts = SupplyChainStep.objects.values('stage').annotate(count=Count('id')).order_by('stage')
+    stage_labels = [dict(SupplyChainStep.STAGE_CHOICES).get(item['stage'], 'Unknown') for item in stage_counts]
     stage_data = [item['count'] for item in stage_counts]
 
     # Metric 2: Average Time Per Stage
     products = Product.objects.prefetch_related('steps').all()
     time_diffs = defaultdict(list)
-
     for product in products:
-        # Sort steps by timestamp to calculate duration
         steps = sorted(list(product.steps.all()), key=lambda x: x.timestamp)
         for i in range(len(steps) - 1):
             current_step = steps[i]
@@ -283,8 +280,12 @@ def analytics_view(request):
     avg_times = {}
     for stage, durations in time_diffs.items():
         avg_seconds = sum(durations) / len(durations)
-        avg_days = avg_seconds / (60 * 60 * 24) # Convert seconds to days
+        avg_days = avg_seconds / (60 * 60 * 24)
         avg_times[dict(SupplyChainStep.STAGE_CHOICES).get(stage)] = round(avg_days, 2)
+
+    # New KPI Card Data
+    total_products = Product.objects.count()
+    slowest_stage = max(avg_times, key=avg_times.get, default="N/A")
 
     avg_time_labels = list(avg_times.keys())
     avg_time_data = list(avg_times.values())
@@ -294,5 +295,9 @@ def analytics_view(request):
         'stage_data': stage_data,
         'avg_time_labels': avg_time_labels,
         'avg_time_data': avg_time_data,
+        'total_products': total_products,
+        'slowest_stage_name': slowest_stage,
+        'slowest_stage_time': avg_times.get(slowest_stage, 0),
+        'total_updates': sum(stage_data),
     }
     return render(request, 'tracker/analytics.html', context)
