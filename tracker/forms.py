@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import Group
-from .models import Product, SupplyChainStep
+from .models import Product, SupplyChainStep, Batch
 from django.conf import settings
 
 class ProductForm(forms.ModelForm):
@@ -30,3 +30,26 @@ class CustomUserCreationForm(UserCreationForm):
         # Set the choices dynamically here, inside the __init__ method
         role_choices = [(role, role) for role in settings.ROLE_PERMISSIONS.keys()]
         self.fields['role'].choices = role_choices
+
+class BatchCreationForm(forms.ModelForm):
+    # This field will let us select products to add to the batch
+    products = forms.ModelMultipleChoiceField(
+        queryset=None, # We will set this in the view
+        widget=forms.CheckboxSelectMultiple,
+        required=True
+    )
+
+    class Meta:
+        model = Batch
+        fields = ['name', 'batch_id', 'description']
+
+    def __init__(self, *args, **kwargs):
+        # We need the user to know which products to show
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            # Show only products that the user is authorized for AND are not already in a batch
+            self.fields['products'].queryset = Product.objects.filter(
+                authorized_users=user,
+                batch__isnull=True
+            )

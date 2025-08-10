@@ -16,7 +16,7 @@ from django.contrib.auth import login
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from .models import Product, SupplyChainStep, Batch
-from .forms import SupplyChainStepForm, ProductForm, CustomUserCreationForm
+from .forms import SupplyChainStepForm, ProductForm, CustomUserCreationForm, BatchCreationForm
 import qrcode
 from io import BytesIO
 from django.http import HttpResponse
@@ -385,3 +385,20 @@ def add_batch_step(request, batch_id):
         messages.error(request, "There was an error with your submission.")
 
     return redirect('batch_detail', batch_id=batch.id)
+
+@login_required
+def create_batch(request):
+    if request.method == 'POST':
+        form = BatchCreationForm(request.POST, user=request.user)
+        if form.is_valid():
+            # First, create the batch instance
+            batch = form.save()
+            # Then, get the selected products from the form
+            selected_products = form.cleaned_data['products']
+            # Assign all selected products to the new batch
+            selected_products.update(batch=batch)
+            return redirect('batch_detail', batch_id=batch.id)
+    else:
+        form = BatchCreationForm(user=request.user)
+
+    return render(request, 'tracker/create_batch.html', {'form': form})
