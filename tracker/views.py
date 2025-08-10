@@ -331,10 +331,18 @@ def analytics_view(request):
 @login_required
 def batch_list(request):
     batches = Batch.objects.all().order_by('-created_at')
-    paginator = Paginator(batches, 10) # Show 10 batches per page
+    paginator = Paginator(batches, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'tracker/batch_list.html', {'page_obj': page_obj})
+
+    # Check if the logged-in user is in the 'Customer' group
+    is_customer = request.user.groups.filter(name='Customer').exists()
+
+    context = {
+        'page_obj': page_obj,
+        'is_customer': is_customer, # Pass the flag to the template
+    }
+    return render(request, 'tracker/batch_list.html', context)
 
 
 @login_required
