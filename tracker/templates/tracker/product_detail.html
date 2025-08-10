@@ -58,7 +58,7 @@
     <div id="error-container"></div>
 
     {% if user.is_authenticated and user in product.authorized_users.all %}
-        {% include 'tracker/partials/_add_update_form.html' %}
+        {% include 'tracker/partials/_add_update_form.html' with form_url='add_supply_chain_step' object_id=product.id %}
     {% endif %}
 
 {% endblock %}
