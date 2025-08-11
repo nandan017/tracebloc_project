@@ -6,6 +6,22 @@
           enctype="multipart/form-data"
           class="htmx-indicator-form space-y-4">
         {% csrf_token %}
+
+        <div>
+            <label for="{{ form.stage.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Stage</label>
+            {{ form.stage }}
+        </div>
+        
+        <div>
+            <label for="{{ form.location.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Location</label>
+            {{ form.location }}
+        </div>
+
+        <div>
+            <label for="{{ form.document.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Attach Document (Optional)</label>
+            {{ form.document }}
+        </div>
+
         <button type="submit" class="w-full text-white bg-accent hover:bg-accent-hover font-bold rounded-lg text-sm px-5 py-3 text-center disabled:opacity-50">
             <span class="btn-text">Add Update</span>
             <span class="btn-loader htmx-indicator">Adding to Blockchain...</span>

@@ -33,7 +33,7 @@
         <a href="{% url 'product_qr_code' product_id=product.id %}" download="{{ product.sku }}_qrcode.png" class="inline-block mt-3 text-accent text-sm font-semibold hover:underline">Download</a>
     </div>
 
-    {% if user.is_authenticated and user in product.authorized_users.all %}
+    {% if available_stages %}
         {% include 'tracker/partials/_add_update_form.html' with form_url='add_supply_chain_step' object_id=product.id %}
     {% endif %}
 </div>
