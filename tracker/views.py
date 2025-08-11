@@ -18,7 +18,6 @@ from io import BytesIO
 import qrcode
 from django.urls import reverse
 from django.contrib import messages
-
 from .models import Product, SupplyChainStep, Batch
 from .forms import (
     SupplyChainStepForm, ProductForm, CustomUserCreationForm, BatchCreationForm
@@ -209,33 +208,64 @@ def batch_detail(request, batch_id):
 @login_required
 @require_POST
 def add_batch_step(request, batch_id):
-    # ... (add_batch_step view logic)
     batch = get_object_or_404(Batch, id=batch_id)
+
+    # --- Form validation and permission checks remain the same ---
     available_stages = get_available_stages_for_user(request.user)
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(request.POST, request.FILES, allowed_choices=allowed_choices)
+
     if form.is_valid():
         stage = form.cleaned_data['stage']
         location = form.cleaned_data['location']
         document = form.cleaned_data.get('document')
+
         if stage not in available_stages:
             messages.error(request, f"Your role does not have permission to add a '{stage}' update.")
             return redirect('batch_detail', batch_id=batch.id)
+
         products_in_batch = batch.products.all()
         successful_updates = 0
-        for product in products_in_batch:
-            try:
-                new_step = SupplyChainStep(product=product, stage=stage, location=location, document=document)
-                tx = contract.functions.addUpdate(str(product.id), new_step.get_stage_display(), new_step.location).build_transaction({'from': account.address, 'nonce': w3.eth.get_transaction_count(account.address)})
+
+        # --- START OF CORRECTED LOGIC ---
+        try:
+            # Get the starting nonce BEFORE the loop
+            current_nonce = w3.eth.get_transaction_count(account.address)
+
+            for product in products_in_batch:
+                # Create the step object but don't save yet
+                new_step = SupplyChainStep(
+                    product=product, stage=stage, location=location, document=document
+                )
+
+                # Build the transaction using the current nonce
+                tx = contract.functions.addUpdate(
+                    str(product.id), new_step.get_stage_display(), new_step.location
+                ).build_transaction({
+                    'from': account.address,
+                    'nonce': current_nonce, # Use the correct, incrementing nonce
+                })
+
                 signed_tx = account.sign_transaction(tx)
                 tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
+
                 new_step.tx_hash = tx_hash.hex()
                 new_step.save()
                 successful_updates += 1
-            except Exception as e:
-                print(f"Blockchain tx failed for product {product.sku}: {e}")
-                continue
+
+                # Increment the nonce for the next transaction in the loop
+                current_nonce += 1
+
+        except Exception as e:
+            # If any transaction fails, we'll know
+            print(f"An error occurred during the batch blockchain transaction: {e}")
+            error_message = f"An error occurred after {successful_updates} successful updates. Please check the product histories."
+            response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
+            response['HX-Retarget'] = '#error-container'
+            return response
+        # --- END OF CORRECTED LOGIC ---
+
         success_message = f"Update successfully added to {successful_updates} of {products_in_batch.count()} products."
         return render(request, 'tracker/partials/_success_toast.html', {'message': success_message})
     else:
