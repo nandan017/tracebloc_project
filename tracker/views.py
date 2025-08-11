@@ -17,6 +17,7 @@ from django.http import HttpResponse
 from io import BytesIO
 import qrcode
 from django.urls import reverse
+from django.contrib import messages
 
 from .models import Product, SupplyChainStep, Batch
 from .forms import (
@@ -24,7 +25,6 @@ from .forms import (
 )
 
 # Load environment variables and set up Blockchain connection...
-# (This entire setup block remains the same)
 load_dotenv()
 RPC_URL = os.getenv("POLYGON_AMOY_RPC_URL")
 PRIVATE_KEY = os.getenv("SIGNER_PRIVATE_KEY")
@@ -43,17 +43,17 @@ except FileNotFoundError:
 checksum_address = w3.to_checksum_address(CONTRACT_ADDRESS)
 contract = w3.eth.contract(address=checksum_address, abi=contract_abi)
 
-# --- VIEWS ---
-
+# --- HELPER FUNCTION ---
 def get_available_stages_for_user(user):
-    """Helper function to get all allowed stages for a user based on their groups."""
     available_stages = []
     user_groups = user.groups.values_list('name', flat=True)
     for group in user_groups:
         available_stages.extend(settings.ROLE_PERMISSIONS.get(group, []))
     return sorted(list(set(available_stages)))
 
+# --- VIEWS ---
 def product_list(request):
+    # ... (product_list view logic)
     queryset = Product.objects.all().order_by('-created_at')
     search_query = request.GET.get('q', '')
     stage_filter = request.GET.get('stage', '')
@@ -69,39 +69,34 @@ def product_list(request):
     return render(request, 'tracker/product_list.html', context)
 
 def product_detail(request, product_id):
+    # ... (product_detail view logic)
     product = get_object_or_404(Product, id=product_id)
     is_manager = False
     available_stages = []
     if request.user.is_authenticated and request.user in product.authorized_users.all():
         is_manager = request.user.groups.filter(name='Manager').exists()
         available_stages = get_available_stages_for_user(request.user)
-    
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(allowed_choices=allowed_choices)
     context = {'product': product, 'form': form, 'is_manager': is_manager, 'available_stages': available_stages}
     return render(request, 'tracker/product_detail.html', context)
 
-# ... (add_supply_chain_step, public_tracking_view, etc. remain the same) ...
-# I am including all views below for completeness.
-
 @login_required
 @require_POST
 def add_supply_chain_step(request, product_id):
+    # ... (add_supply_chain_step view logic)
     product = get_object_or_404(Product, id=product_id)
     if request.user not in product.authorized_users.all():
         error_message = "You are not an authorized user for this product."
         response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
         response['HX-Retarget'] = '#error-container'
         return response
-
     available_stages = get_available_stages_for_user(request.user)
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(request.POST, request.FILES, allowed_choices=allowed_choices)
-
     if form.is_valid():
         stage = form.cleaned_data['stage']
-        is_authorized_for_stage = stage in available_stages
-        if not is_authorized_for_stage:
+        if stage not in available_stages:
             error_message = f"Your role does not have permission to add a '{stage}' update."
             response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
             response['HX-Retarget'] = '#error-container'
@@ -109,12 +104,7 @@ def add_supply_chain_step(request, product_id):
         try:
             new_step = form.save(commit=False)
             new_step.product = product
-            tx = contract.functions.addUpdate(
-                str(product.id), new_step.get_stage_display(), new_step.location
-            ).build_transaction({
-                'from': account.address,
-                'nonce': w3.eth.get_transaction_count(account.address),
-            })
+            tx = contract.functions.addUpdate(str(product.id), new_step.get_stage_display(), new_step.location).build_transaction({'from': account.address, 'nonce': w3.eth.get_transaction_count(account.address)})
             signed_tx = account.sign_transaction(tx)
             tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
             w3.eth.wait_for_transaction_receipt(tx_hash)
@@ -132,12 +122,13 @@ def add_supply_chain_step(request, product_id):
         return render(request, 'tracker/partials/_add_update_form.html', {'product': product, 'form': form})
 
 def public_tracking_view(request, product_id):
+    # ... (public_tracking_view logic)
     product = get_object_or_404(Product, id=product_id)
-    context = {'product': product}
-    return render(request, 'tracker/public_tracking_page.html', context)
+    return render(request, 'tracker/public_tracking_page.html', {'product': product})
 
 @login_required
 def create_product(request):
+    # ... (create_product view logic)
     if request.user.groups.filter(name='Customer').exists():
         return redirect('product_list')
     if request.method == 'POST':
@@ -153,6 +144,7 @@ def create_product(request):
 
 @login_required
 def delete_product(request, product_id):
+    # ... (delete_product view logic)
     product = get_object_or_404(Product, id=product_id)
     is_manager = request.user.groups.filter(name='Manager').exists()
     if request.user.is_superuser or is_manager:
@@ -163,6 +155,7 @@ def delete_product(request, product_id):
 
 @login_required
 def profile_view(request):
+    # ... (profile_view logic)
     user = request.user
     user_groups = user.groups.all()
     associated_products = Product.objects.filter(authorized_users=user).order_by('name')
@@ -170,6 +163,7 @@ def profile_view(request):
     return render(request, 'registration/profile.html', context)
 
 def register_view(request):
+    # ... (register_view logic)
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
@@ -184,6 +178,7 @@ def register_view(request):
     return render(request, 'registration/register.html', {'form': form})
 
 def product_qr_code_view(request, product_id):
+    # ... (product_qr_code_view logic)
     public_url = request.build_absolute_uri(reverse('public_tracking_page', args=[str(product_id)]))
     qr_image = qrcode.make(public_url, box_size=10, border=4)
     buffer = BytesIO()
@@ -192,6 +187,7 @@ def product_qr_code_view(request, product_id):
 
 @login_required
 def batch_list(request):
+    # ... (batch_list view logic)
     batches = Batch.objects.all().order_by('-created_at')
     paginator = Paginator(batches, 10)
     page_number = request.GET.get('page')
@@ -202,16 +198,18 @@ def batch_list(request):
 
 @login_required
 def batch_detail(request, batch_id):
+    # ... (batch_detail view logic)
     batch = get_object_or_404(Batch, id=batch_id)
     available_stages = get_available_stages_for_user(request.user)
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(allowed_choices=allowed_choices)
-    context = {'batch': batch, 'form': form, 'available_stages': available_stages}
+    context = {'batch': batch, 'form': form}
     return render(request, 'tracker/batch_detail.html', context)
 
 @login_required
 @require_POST
 def add_batch_step(request, batch_id):
+    # ... (add_batch_step view logic)
     batch = get_object_or_404(Batch, id=batch_id)
     available_stages = get_available_stages_for_user(request.user)
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
@@ -245,6 +243,7 @@ def add_batch_step(request, batch_id):
 
 @login_required
 def create_batch(request):
+    # ... (create_batch view logic)
     if request.method == 'POST':
         form = BatchCreationForm(request.POST, user=request.user)
         if form.is_valid():
@@ -258,6 +257,7 @@ def create_batch(request):
 
 @login_required
 def edit_batch(request, batch_id):
+    # ... (edit_batch view logic)
     batch = get_object_or_404(Batch, id=batch_id)
     if request.method == 'POST':
         form = BatchCreationForm(request.POST, user=request.user, instance=batch)
@@ -279,12 +279,58 @@ def edit_batch(request, batch_id):
     return render(request, 'tracker/batch_form.html', {'form': form, 'batch': batch})
 
 def public_batch_view(request, batch_id):
+    # ... (public_batch_view logic)
     batch = get_object_or_404(Batch, id=batch_id)
     return render(request, 'tracker/public_batch_page.html', {'batch': batch})
 
 def batch_qr_code_view(request, batch_id):
+    # ... (batch_qr_code_view logic)
     public_url = request.build_absolute_uri(reverse('public_batch_page', args=[str(batch_id)]))
     qr_image = qrcode.make(public_url, box_size=10, border=4)
     buffer = BytesIO()
     qr_image.save(buffer, format='PNG')
     return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+# --- THIS IS THE MISSING VIEW ---
+@login_required
+def analytics_view(request):
+    # Metric 1: Activity by Stage
+    stage_counts = SupplyChainStep.objects.values('stage').annotate(count=Count('id')).order_by('stage')
+    stage_labels = [dict(SupplyChainStep.STAGE_CHOICES).get(item['stage'], 'Unknown') for item in stage_counts]
+    stage_data = [item['count'] for item in stage_counts]
+
+    # Metric 2: Average Time Per Stage
+    products = Product.objects.prefetch_related('steps').all()
+    time_diffs = defaultdict(list)
+    for product in products:
+        steps = sorted(list(product.steps.all()), key=lambda x: x.timestamp)
+        for i in range(len(steps) - 1):
+            current_step = steps[i]
+            next_step = steps[i+1]
+            duration = next_step.timestamp - current_step.timestamp
+            time_diffs[current_step.stage].append(duration.total_seconds())
+
+    avg_times = {}
+    for stage, durations in time_diffs.items():
+        avg_seconds = sum(durations) / len(durations)
+        avg_days = avg_seconds / (60 * 60 * 24)
+        avg_times[dict(SupplyChainStep.STAGE_CHOICES).get(stage)] = round(avg_days, 2)
+
+    # New KPI Card Data
+    total_products = Product.objects.count()
+    slowest_stage = max(avg_times, key=avg_times.get, default="N/A")
+
+    avg_time_labels = list(avg_times.keys())
+    avg_time_data = list(avg_times.values())
+
+    context = {
+        'stage_labels': stage_labels,
+        'stage_data': stage_data,
+        'avg_time_labels': avg_time_labels,
+        'avg_time_data': avg_time_data,
+        'total_products': total_products,
+        'slowest_stage_name': slowest_stage,
+        'slowest_stage_time': avg_times.get(slowest_stage, 0),
+        'total_updates': sum(stage_data),
+    }
+    return render(request, 'tracker/analytics.html', context)
