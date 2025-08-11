@@ -372,7 +372,7 @@ def batch_detail(request, batch_id):
 def add_batch_step(request, batch_id):
     batch = get_object_or_404(Batch, id=batch_id)
 
-    # Get and validate allowed stages for the user
+    # --- This section for form validation and permission checks is correct ---
     available_stages = []
     if request.user.is_authenticated:
         user_groups = request.user.groups.values_list('name', flat=True)
@@ -386,22 +386,23 @@ def add_batch_step(request, batch_id):
         location = form.cleaned_data['location']
         document = form.cleaned_data.get('document')
 
-        # Permission check
         is_authorized_for_stage = any(stage in settings.ROLE_PERMISSIONS.get(group, []) for group in request.user.groups.values_list('name', flat=True))
         if not is_authorized_for_stage:
-            # Return an error toast via HTMX
             error_message = f"Your role does not have permission to add a '{stage}' update."
             response = render(request, 'tracker/partials/_error_toast.html', {'message': error_message})
             response['HX-Retarget'] = '#error-container'
             return response
 
+        # --- The main logic to loop through products ---
         products_in_batch = batch.products.all()
-        # Loop through each product to create a step and a transaction
+        successful_updates = 0
         for product in products_in_batch:
             try:
-                new_step = SupplyChainStep.objects.create(
+                # Create the step object but don't save yet
+                new_step = SupplyChainStep(
                     product=product, stage=stage, location=location, document=document
                 )
+
                 # --- THIS IS THE MISSING BLOCKCHAIN LOGIC ---
                 tx = contract.functions.addUpdate(
                     str(product.id), new_step.get_stage_display(), new_step.location
@@ -412,16 +413,19 @@ def add_batch_step(request, batch_id):
                 signed_tx = account.sign_transaction(tx)
                 tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
+
+                # Now add the hash and save
                 new_step.tx_hash = tx_hash.hex()
                 new_step.save()
+                successful_updates += 1
                 # --- END OF BLOCKCHAIN LOGIC ---
+
             except Exception as e:
                 print(f"Blockchain tx failed for product {product.sku}: {e}")
-                # In a real app, you might want to handle individual failures here
                 continue # Continue to the next product even if one fails
 
         # Return a success message via HTMX
-        success_message = f"Update added to {products_in_batch.count()} products."
+        success_message = f"Update successfully added to {successful_updates} of {products_in_batch.count()} products."
         return render(request, 'tracker/partials/_success_toast.html', {'message': success_message})
     else:
         # Return the form with errors via HTMX
