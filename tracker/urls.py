@@ -27,5 +27,6 @@ urlpatterns = [
     path('batch/<uuid:batch_id>/edit/', views.edit_batch, name='edit_batch'),
     path('track/batch/<uuid:batch_id>/', views.public_batch_view, name='public_batch_page'),
     path('batch/<uuid:batch_id>/qr_code/', views.batch_qr_code_view, name='batch_qr_code'),
+    path('batch/<uuid:batch_id>/delete/', views.delete_batch, name='delete_batch'),
 ]
 

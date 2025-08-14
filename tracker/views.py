@@ -192,7 +192,15 @@ def batch_detail(request, batch_id):
     available_stages = get_available_stages_for_user(request.user)
     allowed_choices = [(stage, dict(SupplyChainStep.STAGE_CHOICES).get(stage)) for stage in available_stages]
     form = SupplyChainStepForm(allowed_choices=allowed_choices)
-    context = {'batch': batch, 'form': form}
+
+    # Add the manager check
+    is_manager = request.user.groups.filter(name='Manager').exists()
+
+    context = {
+        'batch': batch,
+        'form': form,
+        'is_manager': is_manager, # Pass the flag to the template
+    }
     return render(request, 'tracker/batch_detail.html', context)
 
 @login_required
@@ -313,3 +321,22 @@ def analytics_view(request):
         'total_updates': sum(stage_data),
     }
     return render(request, 'tracker/analytics.html', context)
+
+@login_required
+def delete_batch(request, batch_id):
+    batch = get_object_or_404(Batch, id=batch_id)
+
+    # Security check: only superusers or members of the 'Manager' group can delete
+    is_manager = request.user.groups.filter(name='Manager').exists()
+    if not (request.user.is_superuser or is_manager):
+        # If not a manager, redirect them away
+        messages.error(request, "You do not have permission to delete this batch.")
+        return redirect('batch_detail', batch_id=batch.id)
+
+    if request.method == 'POST':
+        batch.delete()
+        messages.success(request, f"Batch '{batch.name}' was successfully deleted.")
+        return redirect('batch_list')
+
+    # If the request is a GET, just redirect back
+    return redirect('batch_detail', batch_id=batch.id)
