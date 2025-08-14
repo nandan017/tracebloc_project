@@ -13,7 +13,7 @@ class ProductForm(forms.ModelForm):
 class SupplyChainStepForm(forms.ModelForm):
     class Meta:
         model = SupplyChainStep
-        fields = ['stage', 'location', 'document']
+        fields = ['stage', 'location', 'latitude', 'longitude', 'document']
 
     def __init__(self, *args, **kwargs):
         allowed_choices = kwargs.pop('allowed_choices', None)

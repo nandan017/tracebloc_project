@@ -120,7 +120,18 @@ def add_supply_chain_step(request, product_id):
 
 def public_tracking_view(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    return render(request, 'tracker/public_tracking_page.html', {'product': product})
+
+    # Get all steps with valid coordinates, ordered by time
+    steps_with_coords = product.steps.exclude(latitude__isnull=True, longitude__isnull=True).order_by('timestamp')
+
+    # Format the coordinates for our JavaScript
+    path_coordinates = [[step.latitude, step.longitude] for step in steps_with_coords]
+
+    context = {
+        'product': product,
+        'path_coordinates': path_coordinates,
+    }
+    return render(request, 'tracker/public_tracking_page.html', context)
 
 @login_required
 def create_product(request):

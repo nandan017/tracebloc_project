@@ -1,28 +1,45 @@
 <div class="bg-base-100 p-6 rounded-lg">
     <h3 class="text-xl font-semibold text-white mb-4">Add New Update</h3>
-    <form hx-post="{% url form_url object_id %}" 
-          hx-target="#error-container" 
-          hx-swap="innerHTML"
-          enctype="multipart/form-data"
-          class="htmx-indicator-form space-y-4">
+    <form hx-post="{% url form_url object_id %}" hx-target="#error-container" hx-swap="innerHTML"
+        enctype="multipart/form-data" class="htmx-indicator-form space-y-4">
         {% csrf_token %}
 
         <div>
             <label for="{{ form.stage.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Stage</label>
             {{ form.stage }}
         </div>
-        
+
         <div>
-            <label for="{{ form.location.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Location</label>
+            <label for="{{ form.location.id_for_label }}"
+                class="block mb-2 text-sm font-medium text-white">Location</label>
             {{ form.location }}
         </div>
 
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="{{ form.latitude.id_for_label }}"
+                    class="block mb-2 text-sm font-medium text-white">Latitude</label>
+                <input type="number" step="any" name="{{ form.latitude.name }}" id="{{ form.latitude.id_for_label }}"
+                    value="{{ form.latitude.value|default:'' }}" placeholder="e.g., 12.9716"
+                    class="bg-base-900 border border-base-100 text-white text-sm rounded-lg focus:ring-accent focus:border-accent block w-full p-2.5">
+            </div>
+            <div>
+                <label for="{{ form.longitude.id_for_label }}"
+                    class="block mb-2 text-sm font-medium text-white">Longitude</label>
+                <input type="number" step="any" name="{{ form.longitude.name }}" id="{{ form.longitude.id_for_label }}"
+                    value="{{ form.longitude.value|default:'' }}" placeholder="e.g., 77.5946"
+                    class="bg-base-900 border border-base-100 text-white text-sm rounded-lg focus:ring-accent focus:border-accent block w-full p-2.5">
+            </div>
+        </div>
+
         <div>
-            <label for="{{ form.document.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Attach Document (Optional)</label>
+            <label for="{{ form.document.id_for_label }}" class="block mb-2 text-sm font-medium text-white">Attach
+                Document (Optional)</label>
             {{ form.document }}
         </div>
 
-        <button type="submit" class="w-full text-white bg-accent hover:bg-accent-hover font-bold rounded-lg text-sm px-5 py-3 text-center disabled:opacity-50">
+        <button type="submit"
+            class="w-full text-white bg-accent hover:bg-accent-hover font-bold rounded-lg text-sm px-5 py-3 text-center disabled:opacity-50">
             <span class="btn-text">Add Update</span>
             <span class="btn-loader htmx-indicator">Adding to Blockchain...</span>
         </button>

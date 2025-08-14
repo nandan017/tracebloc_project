@@ -47,6 +47,9 @@ class SupplyChainStep(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='steps')
     stage = models.CharField(max_length=20, choices=STAGE_CHOICES)
     location = models.CharField(max_length=200)
+    # New fields for coordinates
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     document = models.FileField(upload_to='step_documents/', blank=True, null=True)
     # We'll populate this later with the blockchain transaction hash
