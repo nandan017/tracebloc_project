@@ -11,6 +11,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <script>
       tailwind.config = {
         theme: {
@@ -20,16 +23,16 @@
             },
             colors: {
               'base': {
-                100: '#1F1F1F', // Darker grey for cards/elements with a hint of color
-                900: '#111111', // A slightly softer black for backgrounds
+                100: '#1F1F1F', 
+                900: '#111111', 
               },
               'accent': {
-                DEFAULT: '#FF4500', // Vibrant orange-red
-                hover: '#E63E00',   // Darker orange for hover
+                DEFAULT: '#FF4500', 
+                hover: '#E63E00',   
               },
               'text': {
-                DEFAULT: '#E5E7EB', // Light grey for primary text
-                muted: '#9CA3AF',   // Muted grey for secondary text
+                DEFAULT: '#E5E7EB', 
+                muted: '#9CA3AF',   
               },
             }
           }
