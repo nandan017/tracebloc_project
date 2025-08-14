@@ -103,10 +103,7 @@ def add_supply_chain_step(request, product_id):
             new_step.product = product
             tx = contract.functions.addUpdate(str(product.id), new_step.get_stage_display(), new_step.location).build_transaction({'from': account.address, 'nonce': w3.eth.get_transaction_count(account.address)})
             signed_tx = account.sign_transaction(tx)
-             # Add this debug line
-            print(f"DEBUG attributes: {dir(signed_tx)}")
-            # THIS IS THE CORRECTED LINE FOR WEB3 v6+
-            tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+            tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             w3.eth.wait_for_transaction_receipt(tx_hash)
             new_step.tx_hash = tx_hash.hex()
             new_step.save()
@@ -220,10 +217,7 @@ def add_batch_step(request, batch_id):
                 new_step = SupplyChainStep(product=product, stage=stage, location=location, document=document)
                 tx = contract.functions.addUpdate(str(product.id), new_step.get_stage_display(), new_step.location).build_transaction({'from': account.address, 'nonce': current_nonce})
                 signed_tx = account.sign_transaction(tx)
-                # Add this same debug line
-                print(f"DEBUG attributes: {dir(signed_tx)}")
-                # THIS IS THE SAME CORRECTION, APPLIED HERE
-                tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+                tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
                 w3.eth.wait_for_transaction_receipt(tx_hash)
                 new_step.tx_hash = tx_hash.hex()
                 new_step.save()
